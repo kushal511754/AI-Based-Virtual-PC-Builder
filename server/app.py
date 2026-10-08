@@ -90,6 +90,11 @@ def create_app():
         def home():
             """Show the animated landing intro before sign-in."""
             return safe_render('index.html')
+
+        @app.route('/preview8')
+        def preview8():
+            """Show the temporary design from files (8)."""
+            return safe_render('preview8.html')
         
         @app.route('/home')
         def dashboard():
