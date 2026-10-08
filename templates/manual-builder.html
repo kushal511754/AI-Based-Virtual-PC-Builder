@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Configurator — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .builder-workspace-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 340px;
+            gap: 20px;
+            min-height: calc(100vh - 64px);
+            padding: 20px 24px;
+            max-width: 1720px;
+            margin: 0 auto;
+        }
+
+        /* 1. LEFT CATEGORY SIDEBAR */
+        .category-nav-sidebar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: fit-content;
+            position: sticky;
+            top: 84px;
+        }
+
+        .category-nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-inset);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            user-select: none;
+        }
+
+        .category-nav-item:hover {
+            background: var(--bg-inset);
+            border-color: var(--border-subtle);
+        }
+
+        .category-nav-item.active {
+            background: var(--accent-dim);
+            border-color: var(--border-tech);
+            color: var(--text-primary);
+        }
+
+        .cat-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .cat-status-icon {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .category-nav-item.selected-part .cat-status-icon {
+            color: var(--ok-text);
+        }
+
+        /* 2. CENTER COMPONENT MATRIX & CONTROLS */
+        .configurator-center-col {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .filter-toolbar-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+            gap: 16px;
+        }
+
+        .component-item-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: border-color .15s, background .15s;
+            position: relative;
+        }
+
+        .component-item-card:hover {
+            border-color: var(--border-tech);
+            background: var(--bg-card-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .component-item-card.active-selected {
+            border-color: var(--ok);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .comp-card-badge-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .comp-name {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+            margin-bottom: 8px;
+        }
+
+        .comp-specs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-bottom: 14px;
+        }
+
+        .comp-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 12px;
+            margin-top: 6px;
+        }
+
+        .comp-price-val {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* 3. RIGHT PERSISTENT BUILD SUMMARY & CHASSIS PREVIEW */
+        .builder-summary-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .persistent-summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: sticky;
+            top: 84px;
+        }
+
+        .summary-part-slot-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xs);
+            font-size: 12px;
+            gap: 8px;
+        }
+
+        .summary-part-name {
+            color: var(--text-primary);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+
+        /* Stylized 2D PC Chassis Schematic */
+        .chassis-schematic-box {
+            background: var(--bg-body);
+            border: 1px solid var(--border-tech);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .schematic-slot {
+            padding: 6px 10px;
+            border: 1px dashed var(--bg-inset);
+            border-radius: var(--radius-xs);
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            transition: border-color .15s, background .15s;
+        }
+
+        .schematic-slot.installed {
+            border-style: solid;
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        @media (max-width: 1280px) {
+            .builder-workspace-grid {
+                grid-template-columns: 200px 1fr 300px;
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .builder-workspace-grid {
+                grid-template-columns: 1fr;
+            }
+            .category-nav-sidebar {
+                position: static;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .persistent-summary-card {
+                position: static;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global-fx.css') }}">
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Configurator</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/manual-builder" class="nav-link-item active">Manual builder</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/3d-builder" class="nav-link-item">3D Visualizer</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <button onclick="clearCurrentBuild()" class="btn btn-ghost btn-sm">Reset</button>
+            <button onclick="saveManualBuild()" class="btn btn-primary btn-sm"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save build</button>
+        </div>
+    </header>
+
+    <div class="builder-workspace-grid animate-fade-in-up">
+        <!-- 1. LEFT CATEGORY SIDEBAR -->
+        <aside class="category-nav-sidebar">
+            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--accent); margin-bottom: 8px;">
+                COMPONENTS (8)
+            </div>
+
+            <div class="category-nav-item active" onclick="switchCategory('cpu', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span>
+                    <span>CPU</span>
+                </div>
+                <span id="catStatus_cpu" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('gpu', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="10" rx="2"/><circle cx="9" cy="11" r="2.6"/><circle cx="16" cy="11" r="1.6"/><path d="M5 16v3M2 19h6"/></svg></span>
+                    <span>GPU</span>
+                </div>
+                <span id="catStatus_gpu" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('motherboard', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M11 9h4a2 2 0 0 0 2-2V3M7 21v-4a2 2 0 0 1 2-2h4"/></svg></span>
+                    <span>Motherboard</span>
+                </div>
+                <span id="catStatus_motherboard" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('ram', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="9" rx="1.5"/><path d="M6 16v3M10 16v3M14 16v3M18 16v3M6 11h2M11 11h2M16 11h2"/></svg></span>
+                    <span>Memory (RAM)</span>
+                </div>
+                <span id="catStatus_ram" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('storage', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></svg></span>
+                    <span>Storage</span>
+                </div>
+                <span id="catStatus_storage" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('psu', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></span>
+                    <span>Power supply</span>
+                </div>
+                <span id="catStatus_psu" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('case', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></span>
+                    <span>PC Case</span>
+                </div>
+                <span id="catStatus_case" class="cat-status-icon status-mark"></span>
+            </div>
+
+            <div class="category-nav-item" onclick="switchCategory('cooling', this)">
+                <div class="cat-item-left">
+                    <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-6 3-6s2 3-1 5M14 12c4 0 6 1 6 3s-3 2-5-1M12 14c0 4-1 6-3 6s-2-3 1-5M10 12c-4 0-6-1-6-3s3-2 5 1"/></svg></span>
+                    <span>Cooling</span>
+                </div>
+                <span id="catStatus_cooling" class="cat-status-icon status-mark"></span>
+            </div>
+        </aside>
+
+        <!-- 2. CENTER COMPONENT MATRIX & CONTROLS -->
+        <section class="configurator-center-col">
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar-box">
+                <div class="search-input-wrap">
+                    <input type="text" id="componentSearchInput" class="form-control" placeholder="Search CPU models, sockets, brands..." oninput="handleFilterComponents()">
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="sortSelect" class="form-select" style="width: auto; min-width: 140px;" onchange="handleFilterComponents()">
+                        <option value="price_asc">Price: low to high</option>
+                        <option value="price_desc">Price: high to low</option>
+                        <option value="name_asc">Name (A-Z)</option>
+                    </select>
+
+                    <select id="brandFilterSelect" class="form-select" style="width: auto; min-width: 130px;" onchange="handleFilterComponents()">
+                        <option value="all">All brands</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Components Grid -->
+            <div id="componentsGrid" class="components-grid">
+                <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted);">
+                    Loading components...
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. RIGHT PERSISTENT BUILD SUMMARY & CHASSIS PREVIEW -->
+        <aside class="builder-summary-col">
+            <div class="persistent-summary-card">
+                <div class="hud-header" style="margin-bottom: 10px;">
+                    <div>
+                        <span class="badge badge-cyan">Active rig</span>
+                        <h3 class="hud-title" style="font-size: 17px; margin-top: 4px;">Build overview</h3>
+                    </div>
+                    <span id="compatBadge" class="badge badge-green">100% compatible</span>
+                </div>
+
+                <!-- 2D Technical Chassis Schematic -->
+                <div class="chassis-schematic-box">
+                    <div style="display: flex; justify-content: space-between; gap: 8px;">
+                        <div id="schematic_motherboard" class="schematic-slot" style="flex: 1;">MOTHERBOARD: TRAY</div>
+                        <div id="schematic_cpu" class="schematic-slot">CPU: SOCKET</div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; gap: 8px; margin: 8px 0;">
+                        <div id="schematic_ram" class="schematic-slot" style="flex: 1;">RAM: DIMM SLOTS</div>
+                        <div id="schematic_cooling" class="schematic-slot">COOLER</div>
+                    </div>
+
+                    <div id="schematic_gpu" class="schematic-slot" style="margin-bottom: 8px;">GPU: PCIe 4.0 x16</div>
+
+                    <div style="display: flex; justify-content: space-between; gap: 8px;">
+                        <div id="schematic_storage" class="schematic-slot" style="flex: 1;">M.2 NVMe SSD</div>
+                        <div id="schematic_psu" class="schematic-slot">PSU: BASE</div>
+                    </div>
+                </div>
+
+                <!-- Installed Slots List -->
+                <div id="installedPartsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto;">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Total & Power Telemetry -->
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                    <div class="flex-between" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+                        <span>Estimated power</span>
+                        <span id="estWattageDisplay" style="color: var(--accent); font-weight: 700;">280W / 750W</span>
+                    </div>
+
+                    <!-- Animated Wattage Gauge -->
+                    <div class="gauge-container" style="padding: 8px 10px;">
+                        <div class="gauge-track">
+                            <div id="wattageGaugeFill" class="gauge-fill gauge-fill-green" style="width: 37%;"></div>
+                        </div>
+                        <div class="gauge-markers">
+                            <span>0W</span>
+                            <span>375W</span>
+                            <span>750W</span>
+                        </div>
+                    </div>
+
+                    <!-- Performance Tier Badge -->
+                    <div class="flex-between" style="margin-top: 10px;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Tier</span>
+                        <span id="perfTierBadge" class="tier-badge tier-entry">Entry</span>
+                    </div>
+
+                    <div class="flex-between" style="margin-top: 10px;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Total (INR)</span>
+                        <span id="totalPriceVal" style="font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--accent);">₹0</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <a href="/performance-analysis" class="btn btn-cyan-outline btn-block">
+                        <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg> Performance benchmark</span>
+                    </a>
+                    <button onclick="saveManualBuild()" class="btn btn-primary btn-block">
+                        <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save this build</span>
+                    </button>
+                    <a href="/summary" class="btn btn-ghost btn-sm btn-block">
+                        <span>Export parts list</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        let currentCategory = 'cpu';
+        let partsCache = {};
+        let selectedBuild = {
+            cpu: null,
+            gpu: null,
+            motherboard: null,
+            ram: null,
+            storage: null,
+            psu: null,
+            case: null,
+            cooling: null
+        };
+
+        const defaultPrices = {
+            cpu: 24500,
+            gpu: 49999,
+            motherboard: 18500,
+            ram: 9800,
+            storage: 15500,
+            psu: 9500,
+            case: 11000,
+            cooling: 7500
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if transfer from AI
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('transfer') === 'ai') {
+                const cached = localStorage.getItem('activeBuildParts');
+                if (cached) {
+                    try {
+                        const parsed = JSON.parse(cached);
+                        Object.keys(parsed).forEach(k => {
+                            if (selectedBuild.hasOwnProperty(k)) selectedBuild[k] = parsed[k];
+                        });
+                        showToast('AI build imported');
+                    } catch (e) { console.error(e); }
+                }
+            }
+
+            await loadCategoryParts(currentCategory);
+            renderSummarySlots();
+        });
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function switchCategory(catKey, el) {
+            currentCategory = catKey;
+            document.querySelectorAll('.category-nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('componentSearchInput').value = '';
+            await loadCategoryParts(catKey);
+        }
+
+        async function loadCategoryParts(cat) {
+            const grid = document.getElementById('componentsGrid');
+            grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted);">Fetching components...</div>';
+
+            try {
+                if (!partsCache[cat]) {
+                    const res = await fetch(`/api/parts/${cat}`);
+                    const data = await res.json();
+                    partsCache[cat] = Array.isArray(data) ? data : (data.parts || []);
+                }
+
+                populateBrandFilters(partsCache[cat]);
+                handleFilterComponents();
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 30px; text-align: center; color: var(--bad-text);">Failed to load components.</div>';
+            }
+        }
+
+        function populateBrandFilters(items) {
+            const select = document.getElementById('brandFilterSelect');
+            const brands = [...new Set(items.map(i => i.manufacturer).filter(Boolean))];
+            select.innerHTML = '<option value="all">All Brands</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+        }
+
+        function handleFilterComponents() {
+            const query = document.getElementById('componentSearchInput').value.toLowerCase().trim();
+            const sort = document.getElementById('sortSelect').value;
+            const brand = document.getElementById('brandFilterSelect').value;
+            let items = [...(partsCache[currentCategory] || [])];
+
+            if (query) {
+                items = items.filter(i => (i.name || '').toLowerCase().includes(query) || (i.socket_type || '').toLowerCase().includes(query));
+            }
+
+            if (brand !== 'all') {
+                items = items.filter(i => i.manufacturer === brand);
+            }
+
+            if (sort === 'price_asc') {
+                items.sort((a, b) => getPartPrice(a) - getPartPrice(b));
+            } else if (sort === 'price_desc') {
+                items.sort((a, b) => getPartPrice(b) - getPartPrice(a));
+            } else if (sort === 'name_asc') {
+                items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            }
+
+            renderComponentsGrid(items);
+        }
+
+        function getPartPrice(item) {
+            if (!item) return 0;
+            if (item.price_inr !== undefined) return item.price_inr;
+            if (item.price) return Math.round(item.price * 83);
+            return defaultPrices[currentCategory] || 8500;
+        }
+
+        function renderComponentsGrid(items) {
+            const grid = document.getElementById('componentsGrid');
+            if (items.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted);">No components matched your search.</div>';
+                return;
+            }
+
+            const currentlySelected = selectedBuild[currentCategory];
+
+            grid.innerHTML = items.map(item => {
+                const isSelected = currentlySelected && (currentlySelected.id === item.id || currentlySelected.name === item.name);
+                const price = getPartPrice(item);
+
+                let specsHtml = '';
+                if (currentCategory === 'cpu') {
+                    specsHtml = `
+                        <span>Socket: ${item.socket_type || 'AM5'}</span>
+                        <span>Cores: ${item.cores || 8}C / ${item.threads || 16}T</span>
+                        <span>Base: ${item.base_clock || 3.5} GHz, TDP: ${item.tdp || 105}W</span>
+                    `;
+                } else if (currentCategory === 'gpu') {
+                    specsHtml = `
+                        <span>VRAM: ${item.vram_gb || 12}GB ${item.vram_type || 'GDDR6X'}</span>
+                        <span>Power Draw: ${item.power_draw || 220}W</span>
+                        <span>Length: ${item.length_mm || 280}mm</span>
+                    `;
+                } else if (currentCategory === 'motherboard') {
+                    specsHtml = `
+                        <span>Chipset: ${item.chipset || 'B650'}, Socket: ${item.socket_type || 'AM5'}</span>
+                        <span>RAM Type: ${item.ram_type || 'DDR5'}, Max: ${item.max_ram_gb || 128}GB</span>
+                        <span>Form Factor: ${item.form_factor || 'ATX'}</span>
+                    `;
+                } else if (currentCategory === 'ram') {
+                    specsHtml = `
+                        <span>Size: ${item.size_gb || 32}GB (${item.modules || 2} modules)</span>
+                        <span>Speed: ${item.speed_mhz || 6000}MHz ${item.type || 'DDR5'}</span>
+                    `;
+                } else if (currentCategory === 'storage') {
+                    specsHtml = `
+                        <span>Type: ${item.type || 'NVMe SSD'}</span>
+                        <span>Capacity: ${item.capacity_gb ? item.capacity_gb + 'GB' : '2TB'}</span>
+                        <span>Speed: ${item.speed_rpm_or_mbps || 7000} MB/s</span>
+                    `;
+                } else if (currentCategory === 'psu') {
+                    specsHtml = `
+                        <span>Wattage: ${item.wattage || 750}W</span>
+                        <span>Rating: ${item.efficiency_rating || '80+ Gold'}</span>
+                        <span>Modular: ${item.modular ? 'Yes' : 'No'}</span>
+                    `;
+                } else if (currentCategory === 'case') {
+                    specsHtml = `
+                        <span>Form Factor: ${item.form_factor || 'Mid Tower'}</span>
+                        <span>Max GPU: ${item.max_gpu_length_mm || 400}mm</span>
+                    `;
+                } else if (currentCategory === 'cooling') {
+                    specsHtml = `
+                        <span>Type: ${item.type || 'Air'}, Socket: ${item.socket_type || 'AM5'}</span>
+                        <span>TDP Rating: ${item.tdp_rating || 220}W</span>
+                    `;
+                }
+
+                return `
+                    <div class="component-item-card ${isSelected ? 'active-selected' : ''}">
+                        <div>
+                            <div class="comp-card-badge-row">
+                                <span class="badge ${isSelected ? 'badge-green' : 'badge-neutral'}">${item.manufacturer || 'OEM'}</span>
+                                ${isSelected ? '<span class="badge badge-green">Installed</span>' : ''}
+                            </div>
+                            <div class="comp-name">${item.name}</div>
+                            <div class="comp-specs-list">${specsHtml}</div>
+                        </div>
+
+                        <div class="comp-price-row">
+                            <div class="comp-price-val">₹${price.toLocaleString('en-IN')}</div>
+                            <button onclick="selectComponent('${currentCategory}', ${JSON.stringify(item).replace(/"/g, '&quot;')})" 
+                                    class="btn ${isSelected ? 'btn-danger btn-sm' : 'btn-primary btn-sm'}">
+                                ${isSelected ? 'Remove' : '+ Select'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectComponent(cat, item) {
+            if (selectedBuild[cat] && (selectedBuild[cat].id === item.id || selectedBuild[cat].name === item.name)) {
+                selectedBuild[cat] = null;
+                showToast(`Removed ${item.name}`);
+            } else {
+                selectedBuild[cat] = item;
+                showToast(`Selected ${item.name}`);
+            }
+            renderSummarySlots();
+            handleFilterComponents();
+        }
+
+        function removePart(cat) {
+            selectedBuild[cat] = null;
+            renderSummarySlots();
+            handleFilterComponents();
+        }
+
+        function renderSummarySlots() {
+            const list = document.getElementById('installedPartsList');
+            let totalPrice = 0;
+            let estWatts = 120; // baseline
+
+            const categories = [
+                { key: 'cpu', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>', label: 'CPU' },
+                { key: 'gpu', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="10" rx="2"/><circle cx="9" cy="11" r="2.6"/><circle cx="16" cy="11" r="1.6"/><path d="M5 16v3M2 19h6"/></svg>', label: 'GPU' },
+                { key: 'motherboard', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M11 9h4a2 2 0 0 0 2-2V3M7 21v-4a2 2 0 0 1 2-2h4"/></svg>', label: 'Board' },
+                { key: 'ram', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="9" rx="1.5"/><path d="M6 16v3M10 16v3M14 16v3M18 16v3M6 11h2M11 11h2M16 11h2"/></svg>', label: 'RAM' },
+                { key: 'storage', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></svg>', label: 'SSD' },
+                { key: 'psu', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>', label: 'PSU' },
+                { key: 'case', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>', label: 'Case' },
+                { key: 'cooling', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-6 3-6s2 3-1 5M14 12c4 0 6 1 6 3s-3 2-5-1M12 14c0 4-1 6-3 6s-2-3 1-5M10 12c-4 0-6-1-6-3s3-2 5 1"/></svg>', label: 'Cooler' }
+            ];
+
+            list.innerHTML = categories.map(cat => {
+                const part = selectedBuild[cat.key];
+                const schematicEl = document.getElementById(`schematic_${cat.key}`);
+
+                if (part) {
+                    const price = getPartPrice(part);
+                    totalPrice += price;
+
+                    if (cat.key === 'cpu') estWatts += (part.tdp || 105);
+                    if (cat.key === 'gpu') estWatts += (part.power_draw || 220);
+
+                    // Update schematic
+                    if (schematicEl) {
+                        schematicEl.classList.add('installed');
+                        schematicEl.innerText = `${cat.label}: ${part.name.substring(0, 14)}...`;
+                    }
+
+                    // Update category sidebar status icon
+                    const statusEl = document.getElementById(`catStatus_${cat.key}`);
+                    if (statusEl) {
+                        statusEl.classList.add('done');
+                        statusEl.parentElement.classList.add('selected-part');
+                    }
+
+                    return `
+                        <div class="summary-part-slot-row">
+                            <span style="font-size: 12px; color: var(--accent); font-family: var(--font-mono);">${cat.icon}</span>
+                            <span class="summary-part-name" title="${part.name}">${part.name}</span>
+                            <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-primary);">₹${price.toLocaleString('en-IN')}</span>
+                            <span onclick="removePart('${cat.key}')" style="cursor: pointer; color: var(--bad-text); font-size: 12px;"></span>
+                        </div>
+                    `;
+                } else {
+                    if (schematicEl) {
+                        schematicEl.classList.remove('installed');
+                        schematicEl.innerText = `${cat.label}: empty`;
+                    }
+                    const statusEl = document.getElementById(`catStatus_${cat.key}`);
+                    if (statusEl) {
+                        statusEl.classList.remove('done');
+                        statusEl.parentElement.classList.remove('selected-part');
+                    }
+
+                    return `
+                        <div class="summary-part-slot-row" style="opacity: 0.5;">
+                            <span style="font-size: 12px; font-family: var(--font-mono);">${cat.icon}</span>
+                            <span style="color: var(--text-muted);">${cat.label}: Not Selected</span>
+                            <span>-</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            document.getElementById('totalPriceVal').innerText = `₹${totalPrice.toLocaleString('en-IN')}`;
+            const psuWatts = selectedBuild.psu?.wattage || 750;
+            document.getElementById('estWattageDisplay').innerText = `${estWatts}W / ${psuWatts}W Max`;
+
+            // Update animated wattage gauge
+            const gaugePct = Math.min((estWatts / psuWatts) * 100, 100);
+            const gaugeFill = document.getElementById('wattageGaugeFill');
+            if (gaugeFill) {
+                gaugeFill.style.width = gaugePct + '%';
+                gaugeFill.className = 'gauge-fill';
+                if (gaugePct < 60) gaugeFill.classList.add('gauge-fill-green');
+                else if (gaugePct < 85) gaugeFill.classList.add('gauge-fill-amber');
+                else gaugeFill.classList.add('gauge-fill-rose');
+            }
+
+            // Update performance tier badge
+            const tierBadge = document.getElementById('perfTierBadge');
+            if (tierBadge) {
+                if (totalPrice >= 150000) {
+                    tierBadge.className = 'tier-badge tier-extreme';
+                    tierBadge.textContent = 'Extreme';
+                } else if (totalPrice >= 80000) {
+                    tierBadge.className = 'tier-badge tier-high';
+                    tierBadge.textContent = 'High end';
+                } else if (totalPrice >= 40000) {
+                    tierBadge.className = 'tier-badge tier-mid';
+                    tierBadge.textContent = 'Mid range';
+                } else {
+                    tierBadge.className = 'tier-badge tier-entry';
+                    tierBadge.textContent = 'Entry';
+                }
+            }
+
+            // Store active build
+            localStorage.setItem('activeBuildParts', JSON.stringify(selectedBuild));
+            localStorage.setItem('activeBuildPrice', totalPrice);
+        }
+
+        function clearCurrentBuild() {
+            Object.keys(selectedBuild).forEach(k => selectedBuild[k] = null);
+            renderSummarySlots();
+            handleFilterComponents();
+            showToast('Build cleared');
+        }
+
+        async function saveManualBuild() {
+            const hasAny = Object.values(selectedBuild).some(Boolean);
+            if (!hasAny) {
+                showToast('Select at least one part to save');
+                return;
+            }
+
+            try {
+                const totalPrice = parseInt(document.getElementById('totalPriceVal').innerText.replace(/[^\d]/g, ''), 10) || 0;
+                const payload = {
+                    build_name: 'Custom Manual Rig',
+                    domain: 'Custom',
+                    game_name: 'Custom',
+                    total_price: totalPrice,
+                    suggested_parts: selectedBuild
+                };
+
+                const res = await fetch('/api/builder/save-build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast('Build saved to your library');
+                } else {
+                    showToast(data.message || 'Build saved on this device');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Build saved in this browser');
+            }
+        }
+    </script>
+<script src="{{ url_for('static', filename='js/global-fx.js') }}"></script>
+</body>
+</html>

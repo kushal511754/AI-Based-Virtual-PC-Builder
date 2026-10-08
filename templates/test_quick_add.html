@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .log {
+            background: #1a1f3a;
+            border: 1px solid #667eea;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Quick Add Test</h2>
+        <button onclick="testQuickAdd()">Test Quick Add (CPU)</button>
+        <button onclick="testGlobalSearch()">Test Global Search</button>
+        <button onclick="testComponentLoad()">Test Load Components</button>
+        <button onclick="clearLog()">Clear Log</button>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        function log(msg) {
+            const el = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML += `<div>[${time}] ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testQuickAdd() {
+            log('Testing Quick Add (CPU)...');
+            try {
+                // Simulate calling addComponentOfType('cpu')
+                log('Calling addComponentOfType("cpu")...');
+                
+                // First test if the modal appears
+                const testType = 'cpu';
+                log(`Loading quick parts for domain: gaming`);
+                
+                const response = await fetch(`/api/quick-parts/by-domain/gaming`);
+                log(`Quick parts response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Quick parts: ${JSON.stringify(data).substring(0, 100)}...`);
+                } else {
+                    log(`Error: ${await response.text()}`);
+                }
+                
+                // Now test loading database components
+                log(`Loading database components for ${testType}...`);
+                const dbResponse = await fetch(`/api/parts/${testType}`);
+                log(`DB response status: ${dbResponse.status}`);
+                
+                if (dbResponse.ok) {
+                    const components = await dbResponse.json();
+                    log(`✓ Loaded ${components.length} components`);
+                    if (components.length > 0) {
+                        log(`  First: ${components[0].name} - ₹${(components[0].price * 83).toLocaleString('en-IN')}`);
+                    }
+                } else {
+                    log(`Error: ${await dbResponse.text()}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+
+        async function testGlobalSearch() {
+            log('Testing Global Search...');
+            try {
+                const query = 'i9';
+                log(`Searching for: "${query}"`);
+                const response = await fetch(`/api/parts/search?q=${encodeURIComponent(query)}&limit=5`);
+                log(`Response status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.success) {
+                    log(`✓ Found ${data.count} results`);
+                    if (data.results && data.results.length > 0) {
+                        log(`  First: ${data.results[0].name} (${data.results[0].type})`);
+                    }
+                } else {
+                    log(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+
+        async function testComponentLoad() {
+            log('Testing Component Load...');
+            try {
+                const types = ['cpu', 'gpu', 'ram', 'motherboard', 'storage', 'psu', 'case', 'cooling'];
+                
+                for (const type of types) {
+                    const response = await fetch(`/api/parts/${type}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✓ ${type.toUpperCase()}: ${data.length} components`);
+                    } else {
+                        log(`✗ ${type.toUpperCase()}: Status ${response.status}`);
+                    }
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+
+        log('Test page loaded');
+        log('Check server logs for more details');
+    </script>
+</body>
+</html>

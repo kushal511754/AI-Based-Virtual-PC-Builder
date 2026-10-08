@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Click & Search Test</title>
+    <style>
+        body { font-family: Arial; background: #1a1f3a; color: #fff; padding: 20px; }
+        .test-section { background: #2d1b4e; border: 1px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 10px; }
+        .component-item { background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.2); padding: 10px; margin: 5px 0; border-radius: 5px; cursor: pointer; display: flex; }
+        .component-item:hover { background: rgba(102, 126, 234, 0.2); }
+        .component-name { flex: 1; color: #fff; }
+        .component-price { color: #00d4ff; }
+        input { background: rgba(102, 126, 234, 0.1); border: 1px solid #667eea; color: #fff; padding: 8px; margin: 10px 0; width: 100%; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #fff; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status.ok { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status.err { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Click & Search Fix Verification</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Component Click Handler</h2>
+        <p>Click on any component below to test the click handler:</p>
+        <div id="components"></div>
+        <div id="clickStatus" class="status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Search Filtering</h2>
+        <p>Type in the search box to filter components:</p>
+        <input type="text" id="searchInput" placeholder="Type to search..." onkeyup="testSearch()">
+        <div id="searchResults"></div>
+        <div id="searchStatus" class="status"></div>
+    </div>
+    
+    <script>
+        // Sample data
+        const testComponents = [
+            { id: 1, name: 'Intel Core i7-13700K', price: 38000 },
+            { id: 2, name: 'AMD Ryzen 7 7700X', price: 32000 },
+            { id: 3, name: 'Intel Core i5-13600K', price: 27000 },
+            { id: 4, name: 'AMD Ryzen 5 7600X', price: 22000 },
+            { id: 5, name: 'Intel Core Ultra 7', price: 25000 }
+        ];
+        
+        // Initialize components
+        function initComponents() {
+            const container = document.getElementById('components');
+            container.innerHTML = testComponents.map(comp => `
+                <div class="component-item" data-id="${comp.id}" data-name="${comp.name}" data-price="${comp.price}" 
+                     onclick="testComponentClick(this)" style="cursor: pointer;">
+                    <div class="component-name">${comp.name}</div>
+                    <div class="component-price">₹${comp.price}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Test clicking
+        let lastClickedComponent = null;
+        function testComponentClick(element) {
+            const name = element.dataset.name;
+            const price = element.dataset.price;
+            lastClickedComponent = { name, price };
+            
+            const status = document.getElementById('clickStatus');
+            status.className = 'status ok';
+            status.innerHTML = `✅ <strong>Click successful!</strong><br>Component: ${name}<br>Price: ₹${price}`;
+        }
+        
+        // Test search
+        function testSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const items = document.querySelectorAll('#components .component-item');
+            
+            let visibleCount = 0;
+            items.forEach(item => {
+                const name = item.dataset.name.toLowerCase();
+                const price = item.dataset.price.toLowerCase();
+                
+                const matches = !searchTerm || name.includes(searchTerm) || price.includes(searchTerm);
+                item.style.display = matches ? 'flex' : 'none';
+                
+                if (matches) visibleCount++;
+            });
+            
+            const status = document.getElementById('searchStatus');
+            if (visibleCount === 0 && searchTerm) {
+                status.className = 'status err';
+                status.innerHTML = `❌ No components match "${searchTerm}"`;
+            } else {
+                status.className = 'status ok';
+                status.innerHTML = `✅ <strong>Search working!</strong><br>Showing ${visibleCount} components<br>Search term: "${searchTerm || '(empty - showing all)'}";`;
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', initComponents);
+    </script>
+</body>
+</html>

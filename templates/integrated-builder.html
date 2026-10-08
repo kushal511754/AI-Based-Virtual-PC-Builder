@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated PC Builder Studio — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .integrated-hero {
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Studio</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/3d-builder" class="nav-link-item">3D Visualizer</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/manual-builder" class="btn btn-primary btn-sm">Open builder</a>
+        </div>
+    </header>
+
+    <main class="layout-container animate-fade-in-up">
+        <section class="integrated-hero flex-between">
+            <div>
+                <span class="badge badge-cyan">All-in-one build suite</span>
+                <h1 class="font-display" style="font-size: 28px; font-weight: 700; margin-top: 6px;">Build center</h1>
+                <p style="color: var(--text-secondary); font-size: 14px;">Let the AI suggest a build, or choose each part yourself.</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a href="/ai-domain-selection" class="btn btn-primary">AI Automated Build</a>
+                <a href="/manual-builder" class="btn btn-secondary"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg> Manual builder</a>
+            </div>
+        </section>
+
+        <div class="grid-cols-3">
+            <div class="tech-card">
+                <div class="badge badge-cyan" style="margin-bottom: 10px;">Module 1</div>
+                <h3 class="font-display" style="font-size: 18px; color: var(--text-primary); margin-bottom: 8px;">AI Suggestion Engine</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Suggests a balanced build based on your budget and the games you play.</p>
+                <a href="/ai-domain-selection" class="btn btn-cyan-outline btn-sm btn-block">Launch AI Wizard</a>
+            </div>
+
+            <div class="tech-card">
+                <div class="badge badge-purple" style="margin-bottom: 10px;">Module 2</div>
+                <h3 class="font-display" style="font-size: 18px; color: var(--text-primary); margin-bottom: 8px;">Manual part picking</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Pick parts with live socket compatibility, wattage headroom calculations, and 2D chassis preview.</p>
+                <a href="/manual-builder" class="btn btn-secondary btn-sm btn-block">Open builder</a>
+            </div>
+
+            <div class="tech-card">
+                <div class="badge badge-green" style="margin-bottom: 10px;">Module 3</div>
+                <h3 class="font-display" style="font-size: 18px; color: var(--text-primary); margin-bottom: 8px;">Performance & FPS Lab</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">See estimated frame rates at 1080p, 1440p and 4K, cooling capacity and where your budget goes.</p>
+                <a href="/performance-analysis" class="btn btn-ghost btn-sm btn-block">View benchmarks</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

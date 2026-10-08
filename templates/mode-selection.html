@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Build Setup — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .mode-page-wrap {
+            min-height: calc(100vh - 62px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+        }
+
+        .mode-content-box {
+            max-width: 980px;
+            width: 100%;
+        }
+
+        .mode-page-header {
+            text-align: center;
+            margin-bottom: 38px;
+        }
+
+        .mode-page-header h1 {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .mode-page-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+
+        .pathway-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .pathway-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 34px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+
+        .pathway-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-subtle-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .pathway-card.manual-card:hover {
+            border-color: var(--accent-2-line);
+        }
+
+        .pathway-card.ai-card:hover {
+            border-color: var(--accent-line);
+        }
+
+        .pathway-icon-box {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .pathway-icon-box.manual {
+            background: var(--accent-2-dim);
+            border: 1px solid var(--accent-2-dim);
+        }
+        .pathway-icon-box.ai {
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-line);
+        }
+
+        .pathway-badge-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .component-chain-strip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 14px 0;
+            padding: 10px 12px;
+            background: var(--bg-inset);
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .component-chain-strip span {
+            padding: 2px 8px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface);
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            margin-bottom: 22px;
+        }
+        .feature-list li::before {
+            content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok-text); margin-right: 9px; vertical-align: middle;
+            font-weight: 700;
+        }
+
+        @media (max-width: 860px) {
+            .pathway-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global-fx.css') }}">
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Builder</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/mode-selection" class="nav-link-item active">Build setup</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/home" class="btn btn-ghost btn-sm">Back</a>
+        </div>
+    </header>
+
+    <div class="mode-page-wrap animate-fade-in-up">
+        <div class="mode-content-box">
+            <div class="mode-page-header">
+                <span class="badge badge-neutral" style="margin-bottom: 10px;">Configurator selection</span>
+                <h1>Choose your build setup</h1>
+                <p>Select the workflow that matches your expertise and customization needs.</p>
+            </div>
+
+            <div class="pathway-cards-grid">
+                <!-- OPTION A: MANUAL BUILD -->
+                <div class="pathway-card manual-card" onclick="window.location='/manual-builder'">
+                    <div>
+                        <div class="pathway-icon-box manual"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg></div>
+                        <div class="pathway-badge-row">
+                            <span class="badge badge-purple">Option A</span>
+                            <span style="font-size: 12px; color: var(--text-muted); ">Manual</span>
+                        </div>
+
+                        <h2 class="font-display" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                            Manual builder
+                        </h2>
+                        <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.5;">
+                            Hand-pick every component from CPU to Chassis with live socket checks, clearance validation, and price auditing.
+                        </p>
+
+                        <div class="component-chain-strip">
+                            <span>CPU</span>
+                            <span>GPU</span>
+                            <span>Motherboard</span>
+                            <span>RAM</span>
+                            <span>SSD</span>
+                            <span>PSU</span>
+                            <span>Case</span>
+                            <span>Cooler</span>
+                        </div>
+
+                        <ul class="feature-list">
+                            <li>Complete component-level control</li>
+                            <li>Real-time socket & clearance validation</li>
+                            <li>Live Indian market pricing in INR (₹)</li>
+                            <li>Interactive 2D chassis schematic & wattage headroom</li>
+                        </ul>
+                    </div>
+
+                    <a href="/manual-builder" class="btn btn-secondary btn-block">
+                        <span>Start manual build</span>
+                    </a>
+                </div>
+
+                <!-- OPTION B: AI BUILDER -->
+                <div class="pathway-card ai-card" onclick="window.location='/ai-domain-selection'">
+                    <div>
+                        <div class="pathway-icon-box ai"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg></div>
+                        <div class="pathway-badge-row">
+                            <span class="badge badge-cyan">Option B: Recommended</span>
+                            <span style="font-size: 12px; color: var(--accent); ">AI matched</span>
+                        </div>
+
+                        <h2 class="font-display" style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                            AI Builder
+                        </h2>
+                        <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.5;">
+                            Give us your budget and what you will use the PC for. Our AI suggests a balanced build with compatible parts.
+                        </p>
+
+                        <div class="component-chain-strip" style="background: var(--accent-dim); border-color: var(--accent-dim);">
+                            <span style="color: var(--accent);">Budget</span>
+                            <span style="color: var(--accent);">Workload</span>
+                            <span style="color: var(--accent);">AI matching</span>
+                            <span style="color: var(--accent);">Ready build</span>
+                        </div>
+
+                        <ul class="feature-list">
+                            <li>Budget-aware intelligent allocation</li>
+                            <li>Target resolution & FPS gaming optimization</li>
+                            <li>Workload presets (Gaming, 3D, Video, AI/ML)</li>
+                            <li>Instant hand-off to Manual Configurator</li>
+                        </ul>
+                    </div>
+
+                    <a href="/ai-domain-selection" class="btn btn-primary btn-block">
+                        <span>Build with AI</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="{{ url_for('static', filename='js/global-fx.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .landing-hero { padding: 72px 0 48px; max-width: 760px; }
+        .landing-hero h1 { font-size: clamp(36px, 6vw, 58px); font-weight: 700; margin-bottom: 16px; }
+        .landing-hero p { font-size: 17px; color: var(--text-secondary); max-width: 560px; margin-bottom: 28px; }
+        .landing-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .counts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 14px; margin-top: 12px; }
+        .section-title { font-size: 22px; font-weight: 700; margin: 56px 0 6px; }
+    </style>
+</head>
+<body>
+    <div class="intro-splash" id="intro-splash" aria-hidden="true">
+        <div class="intro-content">
+            <div class="intro-mark"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="intro-name">Virtual PC <span>Builder</span></div>
+            <div class="intro-tag">Design. Check. Build.</div>
+        </div>
+    </div>
+
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title"><span>Virtual PC</span><span class="brand-sub">Builder</span></div>
+        </a>
+        <div class="nav-actions-group">
+            <a href="/login" class="btn btn-ghost btn-sm">Sign in</a>
+            <a href="/signup" class="btn btn-primary btn-sm">Create account</a>
+        </div>
+    </header>
+    <main class="layout-container">
+        <section class="landing-hero animate-fade-in-up">
+            <h1>Build a PC that fits your budget and your games.</h1>
+            <p>Pick parts yourself or let the AI balance a build for you. Every choice is checked for socket, power and clearance problems as you go.</p>
+            <div class="landing-actions">
+                <a href="/ai-domain-selection" class="btn btn-primary btn-lg">Build with AI</a>
+                <a href="/manual-builder" class="btn btn-secondary btn-lg">Pick parts manually</a>
+            </div>
+        </section>
+        <h2 class="section-title">Parts in the catalogue</h2>
+        <p style="color: var(--text-secondary); font-size: 14px;">Live counts from the parts database.</p>
+        <div class="counts-grid">
+            <div class="metric-box"><span class="metric-label">CPU</span><span class="metric-value" id="cpu-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">GPU</span><span class="metric-value" id="gpu-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">Motherboard</span><span class="metric-value" id="mobo-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">RAM</span><span class="metric-value" id="ram-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">Storage</span><span class="metric-value" id="storage-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">Power supply</span><span class="metric-value" id="psu-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">Case</span><span class="metric-value" id="case-count">-</span></div>
+            <div class="metric-box"><span class="metric-label">Cooling</span><span class="metric-value" id="cooling-count">-</span></div>
+        </div>
+    </main>
+    <script>
+        // Remove the intro from the DOM once it has finished (2s)
+        setTimeout(function () {
+            var el = document.getElementById('intro-splash');
+            if (el) el.remove();
+        }, 2100);
+
+        async function loadComponentCounts() {
+            const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'];
+            for (const cat of categories) {
+                try {
+                    const response = await fetch('/api/parts/' + cat);
+                    const data = await response.json();
+                    document.getElementById((cat === 'motherboard' ? 'mobo' : cat) + '-count').textContent = Array.isArray(data) ? data.length : 0;
+                } catch (e) {
+                    console.error('Error loading ' + cat + ':', e);
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadComponentCounts);
+    </script>
+</body>
+</html>

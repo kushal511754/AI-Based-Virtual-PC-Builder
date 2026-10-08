@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Your Goal? - Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .goal-wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 72px; }
+        .header { margin-bottom: 28px; }
+        .header h1 { font-size: 34px; font-weight: 700; margin-bottom: 8px; }
+        .header p { font-size: 15px; color: var(--text-secondary); }
+        .domain-info { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; padding: 14px 18px; background: var(--accent-dim); border: 1px solid var(--accent-line); border-radius: var(--radius-md); }
+        .domain-info .domain-label { font-size: 13px; color: var(--text-secondary); }
+        .domain-info .domain-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); }
+        .input-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 30px; margin-bottom: 24px; }
+        .input-label { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary); }
+        .input-group { display: flex; gap: 10px; margin-bottom: 8px; }
+        .input-field { flex: 1; }
+        .input-field input { width: 100%; padding: 13px 15px; background: var(--bg-inset); border: 1px solid var(--border-subtle-hover); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 14.5px; }
+        .input-field input::placeholder { color: var(--text-muted); }
+        .input-field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        .suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 10px; }
+        .suggestion-btn { padding: 11px 14px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle-hover); border-radius: var(--radius-sm); color: var(--text-primary); cursor: pointer; font-size: 13.5px; font-weight: 500; text-align: left; transition: border-color .15s, background .15s; }
+        .suggestion-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+        .action-buttons { display: flex; gap: 12px; justify-content: flex-end; }
+        .skip-section { margin-top: 18px; text-align: right; }
+        .skip-btn { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+        .skip-btn:hover { color: var(--accent); }
+        @media (max-width: 600px) { .action-buttons { flex-direction: column-reverse; } .action-buttons .btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title"><span>Virtual PC</span><span class="brand-sub">Manual builder</span></div>
+        </a>
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/manual-builder" class="nav-link-item active">Manual builder</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+        <div class="nav-actions-group"><a href="/manual-domain-selection" class="btn btn-ghost btn-sm">Change domain</a></div>
+    </header>
+<div class="goal-wrap animate-fade-in-up">
+        <div class="header">
+            <h1>What's Your Goal?</h1>
+            <p>Tell us what game or task this PC is optimized for</p>
+        </div>
+
+        <div class="domain-info">
+            <div class="domain-label">Selected domain</div>
+            <div class="domain-name" id="domainName">Loading...</div>
+        </div>
+
+        <div class="input-section" id="goalSection">
+            <div class="input-label" id="goalLabel">Game or Task Name</div>
+            <div class="input-group" id="goalInputGroup">
+                <div class="input-field">
+                    <input 
+                        type="text" 
+                        id="goalInput" 
+                        placeholder="e.g., Cyberpunk 2077, Adobe Premiere Pro, Blender..."
+                        onkeyup="updateSuggestions()"
+                    >
+                </div>
+            </div>
+
+            <div class="input-label" style="margin-top: 30px;">Popular for this domain:</div>
+            <div class="suggestions" id="suggestionsContainer">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="goBack()">Back</button>
+            <button class="btn btn-primary" onclick="proceedToBuilder()">Continue to builder</button>
+        </div>
+
+        <div class="skip-section">
+            <button class="skip-btn" onclick="skipGoal()">Skip - Go to Builder without goal</button>
+        </div>
+    </div>
+
+    <script>
+        // Domain suggestions for each domain
+        const domainSuggestions = {
+            'gaming': [
+                'Cyberpunk 2077',
+                'Elden Ring',
+                'Baldur\'s Gate 3',
+                'Fortnite',
+                'Valorant',
+                'CS:GO',
+                'GTA 6'
+            ],
+            'video_editing': [
+                'Adobe Premiere Pro',
+                'DaVinci Resolve',
+                '4K Video Editing',
+                'Sony Vegas Pro',
+                '1080p Fast Editing',
+                'YouTube Videos'
+            ],
+            'streaming': [
+                'Twitch Streaming',
+                'YouTube Gaming',
+                'OBS Studio',
+                '1080p 60fps',
+                'Gameplay + Chat',
+                'Multi-camera Setup'
+            ],
+            'rendering': [
+                'Blender Rendering',
+                'V-Ray Rendering',
+                'Corona Renderer',
+                'Octane Render',
+                ' 3D Modeling',
+                '4K Animation'
+            ],
+            'programming': [
+                'Game Development',
+                'Web Development',
+                'Machine Learning',
+                'Android Development',
+                'Deep Compilation',
+                'Docker Containers'
+            ],
+            'general_purpose': [
+                'Office Work',
+                'Web Browsing',
+                'Video Watching',
+                'Photo Editing',
+                'Document Work',
+                'Daily Productivity'
+            ]
+        };
+
+        let selectedDomain = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            selectedDomain = sessionStorage.getItem('selectedManualDomain') || 'gaming';
+            displayDomainInfo();
+            displaySuggestions();
+        });
+
+        function displayDomainInfo() {
+            const domainNames = {
+                'gaming': 'Gaming',
+                'video_editing': 'Video Editing',
+                'rendering': 'Rendering',
+                'streaming': 'Streaming',
+                'programming': 'Programming',
+                'general_purpose': 'General Purpose'
+            };
+            document.getElementById('domainName').textContent = domainNames[selectedDomain] || selectedDomain;
+            
+            // Hide goal input section for non-gaming domains
+            const goalSection = document.getElementById('goalSection');
+            if (selectedDomain !== 'gaming') {
+                goalSection.style.display = 'none';
+            } else {
+                goalSection.style.display = 'block';
+            }
+        }
+
+        function displaySuggestions() {
+            const suggestions = domainSuggestions[selectedDomain] || [];
+            const container = document.getElementById('suggestionsContainer');
+            container.innerHTML = suggestions.map(suggestion => `
+                <button class="suggestion-btn" onclick="selectSuggestion('${suggestion}')">
+                    ${suggestion}
+                </button>
+            `).join('');
+        }
+
+        function updateSuggestions() {
+            const input = document.getElementById('goalInput').value.toLowerCase().trim();
+            const container = document.getElementById('suggestionsContainer');
+            
+            if (!input) {
+                displaySuggestions();
+                return;
+            }
+
+            if (input.length < 2) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Type at least 2 characters to search</div>';
+                return;
+            }
+
+            // Search for real games from database using ML fuzzy matching
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Searching real games...</div>';
+            
+            fetch(`/api/games-search/search?q=${encodeURIComponent(input)}&limit=12`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.games && data.games.length > 0) {
+                        container.innerHTML = data.games.map(game => `
+                            <button class="suggestion-btn" onclick="selectSuggestion('${(game.name || game).replace(/'/g, "\\'")}')">
+                                ${game.name || game}
+                            </button>
+                        `).join('');
+                    } else if (data.suggestions && data.suggestions.length > 0) {
+                        // Fallback to autocomplete format
+                        container.innerHTML = data.suggestions.map(game => `
+                            <button class="suggestion-btn" onclick="selectSuggestion('${game.replace(/'/g, "\\'")}')">
+                                ${game}
+                            </button>
+                        `).join('');
+                    } else {
+                        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">No games found. Type any game name you want!</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Search unavailable, use custom goal</div>';
+                });
+        }
+
+        function selectSuggestion(goal) {
+            document.getElementById('goalInput').value = goal;
+        }
+
+        function proceedToBuilder() {
+            const goal = document.getElementById('goalInput').value.trim();
+            
+            // Only require goal input for gaming domain
+            if (selectedDomain === 'gaming' && !goal) {
+                alert('Please enter a game or task name');
+                return;
+            }
+            
+            // Store goal in session storage (or empty string for non-gaming)
+            sessionStorage.setItem('manualBuilderGoal', goal);
+            
+            // Navigate to manual builder
+            window.location.href = '/manual-builder';
+        }
+
+        function skipGoal() {
+            // Clear goal if skipping
+            sessionStorage.removeItem('manualBuilderGoal');
+            window.location.href = '/manual-builder';
+        }
+
+        function goBack() {
+            window.location.href = '/manual-domain-selection';
+        }
+    </script>
+</body>
+</html>

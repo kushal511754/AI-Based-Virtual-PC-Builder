@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login-fx.css') }}">
+    <style>
+        .auth-viewport {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            background: 
+                var(--bg-body);
+            position: relative;
+        }
+
+        .auth-split-wrapper {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            width: 100%;
+            max-width: 980px;
+            min-height: 560px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Left Showcase Panel */
+        .auth-branding-panel {
+            padding: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .branding-hud-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hud-system-badge {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--accent-line);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .branding-main-copy {
+            margin: 36px 0;
+        }
+
+        .brand-huge-title {
+            font-family: var(--font-display);
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .brand-tagline {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 380px;
+        }
+
+        .tech-hud-diagram {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .hud-spec-pill {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .hud-spec-pill .label {
+            font-family: var(--font-mono);
+            font-size: 9.5px;
+            color: var(--text-muted);
+        }
+        .hud-spec-pill .val {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Right Form Panel */
+        .auth-form-panel {
+            padding: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: var(--bg-surface);
+        }
+
+        .form-header-box {
+            margin-bottom: 22px;
+        }
+        .form-header-box h2 {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .form-header-box p {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .auth-row-extra {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .remember-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .remember-checkbox input {
+            accent-color: var(--accent);
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 14px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        .form-alert {
+            padding: 9px 12px;
+            border-radius: var(--radius-xs);
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .form-alert.error {
+            background: var(--bad-dim);
+            border: 1px solid var(--bad-line);
+            color: var(--bad-text);
+            display: block;
+        }
+        .form-alert.success {
+            background: var(--ok-dim);
+            border: 1px solid var(--ok-line);
+            color: var(--ok-text);
+            display: block;
+        }
+
+        @media (max-width: 860px) {
+            .auth-split-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .auth-branding-panel {
+                display: none;
+            }
+            .auth-form-panel {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fx-veil"></div>
+    <div class="auth-viewport">
+        <div class="auth-split-wrapper animate-fade-in-up">
+            <!-- Left Branding Showcase -->
+            <div class="auth-branding-panel">
+                <div>
+                    <div class="branding-hud-top">
+                        <div class="hud-system-badge">
+                            <span class="user-status-dot"></span>
+                            AI CONFIGURATOR v2.6
+                        </div>
+                        <span class="badge badge-neutral" style="font-size: 12px;">Studio pro</span>
+                    </div>
+
+                    <div class="branding-main-copy">
+                        <h1 class="brand-huge-title">
+                            Virtual PC<br>
+                            <span class="text-accent">Builder</span>
+                        </h1>
+                        <p class="brand-tagline">
+                            Compatibility checks, live prices in rupees and smart build suggestions.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Technical HUD Box -->
+                <div>
+                    <div class="tech-hud-diagram">
+                        <div class="hud-spec-pill">
+                            <span class="label">Catalogue</span>
+                            <span class="val">50,000+ parts</span>
+                        </div>
+                        <div class="hud-spec-pill">
+                            <span class="label">Checks</span>
+                            <span class="val">Socket and power</span>
+                        </div>
+                        <div class="hud-spec-pill">
+                            <span class="label">Pricing</span>
+                            <span class="val">Live INR prices</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+                        <span>Service running</span>
+                        <span>LATENCY: 14ms</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Login Panel -->
+            <div class="auth-form-panel">
+                <div class="form-header-box">
+                    <h2>Sign in</h2>
+                    <p>Enter your credentials to access your saved hardware.</p>
+                </div>
+
+                <div id="authAlert" class="form-alert"></div>
+
+                <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" class="form-control" placeholder="builder@hardware.io" required autofocus value="demo@pcbuilder.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required value="Demo123">
+                    </div>
+
+                    <div class="auth-row-extra">
+                        <label class="remember-checkbox">
+                            <input type="checkbox" id="rememberMe" checked>
+                            <span>Remember me</span>
+                        </label>
+                        <a href="javascript:void(0)" onclick="quickFillGuest()" style="font-size: 12px; color: var(--accent);">Use demo login</a>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 4px;">
+                        <span>Continue</span>
+                    </button>
+                </form>
+
+                <div class="auth-divider">OR</div>
+
+                <!-- Social Login Buttons -->
+                <div class="social-login-group">
+                    <button type="button" onclick="continueAsGuest()" class="btn-social">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Google
+                    </button>
+                    <button type="button" onclick="continueAsGuest()" class="btn-social">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                        GitHub
+                    </button>
+                </div>
+
+                <div class="auth-divider">OR</div>
+
+                <button type="button" onclick="continueAsGuest()" class="btn btn-secondary btn-block">
+                    <span>Continue as Guest</span>
+                </button>
+
+                <div style="margin-top: 20px; text-align: center; font-size: 12.5px; color: var(--text-secondary);">
+                    Don't have an account? 
+                    <a href="/signup" style="font-weight: 600; color: var(--accent); margin-left: 4px;">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/login-fx.js') }}"></script>
+    <script>
+        function showAlert(msg, isError = true) {
+            const alertBox = document.getElementById('authAlert');
+            alertBox.className = `form-alert ${isError ? 'error' : 'success'}`;
+            alertBox.innerText = msg;
+            alertBox.style.display = 'block';
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function quickFillGuest() {
+            document.getElementById('loginEmail').value = 'demo@pcbuilder.com';
+            document.getElementById('loginPassword').value = 'Demo123';
+            showToast('Demo credentials prefilled');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showAlert('Please provide both email and password.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Authenticating...</span>';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showAlert('Authentication successful.', false);
+                    localStorage.setItem('user', JSON.stringify(data.user || { email, username: email.split('@')[0] }));
+                    setTimeout(() => {
+                        (window.fxNavigate||function(u){location.href=u})('/home');
+                    }, 500);
+                } else {
+                    showAlert(data.error || 'Authentication failed. Please check credentials.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Continue</span>';
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('Launching in offline guest mode...');
+                localStorage.setItem('user', JSON.stringify({ email, username: 'Guest Builder', isGuest: true }));
+                setTimeout(() => {
+                    (window.fxNavigate||function(u){location.href=u})('/home');
+                    }, 600);
+            }
+        }
+
+        function continueAsGuest() {
+            localStorage.setItem('user', JSON.stringify({ username: 'Guest Builder', email: 'guest@pcbuilder.io', isGuest: true }));
+            showToast('Signing in as guest...');
+            setTimeout(() => {
+                (window.fxNavigate||function(u){location.href=u})('/home');
+            }, 300);
+        }
+    </script>
+</body>
+</html>

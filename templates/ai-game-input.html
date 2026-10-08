@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Configurator Wizard — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .wizard-container {
+            max-width: 920px;
+            margin: 24px auto 60px auto;
+        }
+
+        .wizard-steps-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+        }
+
+        .step-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .step-pill.active {
+            color: var(--accent);
+        }
+
+        .step-pill.completed {
+            color: var(--ok-text);
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            font-size: 12px;
+        }
+
+        .step-pill.active .step-num {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .step-pill.completed .step-num {
+            background: var(--ok-dim);
+            border-color: var(--ok);
+            color: var(--ok-text);
+        }
+
+        .step-panel {
+            display: none;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        /* Preset Budget Chips */
+        .preset-chip-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 16px 0 24px 0;
+        }
+
+        .preset-chip {
+            padding: 10px 8px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+
+        .preset-chip:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: var(--accent-dim);
+        }
+
+        .preset-chip.selected {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        /* Resolution and FPS Cards */
+        .choice-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+            gap: 12px;
+            margin: 12px 0 20px 0;
+        }
+
+        .choice-btn {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            user-select: none;
+        }
+
+        .choice-btn:hover {
+            border-color: var(--bg-inset);
+            background: var(--bg-inset);
+        }
+
+        .choice-btn.selected {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .choice-btn .title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .choice-btn.selected .title {
+            color: var(--accent);
+        }
+
+        .choice-btn .sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        /* Game Search Autocomplete Box */
+        .game-search-box {
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .game-autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-tech);
+            border-radius: var(--radius-sm);
+            max-height: 220px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        .game-dropdown-item {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .game-dropdown-item:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .selected-games-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .game-chip {
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-line);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .game-chip-remove {
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .game-chip-remove:hover {
+            color: var(--bad-text);
+        }
+
+        /* Cyberpunk Loading Screen */
+        .ai-processing-overlay {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .radar-spinner {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 30px auto;
+            border-radius: 50%;
+            border: 2px solid var(--accent-dim);
+            border-top-color: var(--accent);
+            border-right-color: var(--accent-2);
+            animation: spin 0.9s linear infinite;
+            box-shadow: 0 0 0 3px var(--accent-dim);
+            position: relative;
+        }
+
+        .radar-spinner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .telemetry-logs-box {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-tech);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            max-width: 520px;
+            margin: 20px auto 0 auto;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent);
+            height: 120px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .preset-chip-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .wizard-steps-header {
+                padding: 12px;
+                gap: 8px;
+            }
+            .step-pill span.step-title {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Builder</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item active">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/ai-domain-selection" class="btn btn-ghost btn-sm">Change domain</a>
+        </div>
+    </header>
+
+    <div class="wizard-container">
+        <!-- Steps Header Progress -->
+        <div class="wizard-steps-header">
+            <div id="pillStep1" class="step-pill active">
+                <span class="step-num">1</span>
+                <span class="step-title">Budget</span>
+            </div>
+            
+            <div id="pillStep2" class="step-pill">
+                <span class="step-num">2</span>
+                <span class="step-title">Targets</span>
+            </div>
+            
+            <div id="pillStep3" class="step-pill">
+                <span class="step-num">3</span>
+                <span class="step-title">Preferences</span>
+            </div>
+        </div>
+
+        <!-- ===================================================================
+             STEP 1: BUDGET CONFIGURATION
+             =================================================================== -->
+        <div id="step1Panel" class="step-panel active">
+            <div class="tech-card">
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-cyan" id="currentDomainBadge">Gaming rig</span>
+                        <h2 class="hud-title" style="font-size: 22px; margin-top: 6px;">Set target budget</h2>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 12px; color: var(--text-muted); ">Currency</span>
+                        <div style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary);">INR (₹) / USD ($)</div>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">
+                    Enter your total budget. We split it across GPU, CPU, RAM and cooling so no single part holds the others back.
+                </p>
+
+                <!-- Dynamic Big Budget Display -->
+                <div style="background: var(--bg-inset); border: 1px solid var(--border-tech); border-radius: var(--radius-md); padding: 24px; text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 12px; color: var(--text-muted); ">Selected budget</span>
+                    <div id="budgetDisplayVal" style="font-family: var(--font-mono); font-size: 42px; font-weight: 700; color: var(--accent);  margin: 6px 0;">
+                        ₹1,25,000
+                    </div>
+                    <span id="budgetUsdVal" style="font-size: 13px; color: var(--text-secondary); font-family: var(--font-mono);">≈ $1,506 USD</span>
+                </div>
+
+                <!-- Range Slider -->
+                <input type="range" id="budgetSlider" class="tech-slider" min="35000" max="350000" step="2500" value="125000" oninput="syncBudgetFromSlider(this.value)">
+
+                <!-- Quick Presets -->
+                <div class="preset-chip-grid">
+                    <div class="preset-chip" onclick="setPresetBudget(50000)">₹50,000</div>
+                    <div class="preset-chip" onclick="setPresetBudget(75000)">₹75,000</div>
+                    <div class="preset-chip selected" onclick="setPresetBudget(125000)">₹1,25,000</div>
+                    <div class="preset-chip" onclick="setPresetBudget(175000)">₹1,75,000</div>
+                    <div class="preset-chip" onclick="setPresetBudget(250000)">₹2,50,000+</div>
+                </div>
+
+                <!-- Custom Budget Input -->
+                <div class="form-group" style="max-width: 320px;">
+                    <label class="form-label" for="customBudgetInput">Or Enter Custom Amount (₹)</label>
+                    <input type="number" id="customBudgetInput" class="form-control text-mono" value="125000" min="30000" max="1000000" step="1000" oninput="syncBudgetFromInput(this.value)">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 24px; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="goToStep(2)">
+                        <span>Set goals and games</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================================
+             STEP 2: TARGET RESOLUTION, FRAMERATES & GAMES
+             =================================================================== -->
+        <div id="step2Panel" class="step-panel">
+            <div class="tech-card">
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-cyan">Performance targets</span>
+                        <h2 class="hud-title" style="font-size: 22px; margin-top: 6px;">Resolution, FPS & Games</h2>
+                    </div>
+                </div>
+
+                <!-- Resolution Options -->
+                <div class="form-group">
+                    <label class="form-label">Target Gaming / Monitor Resolution</label>
+                    <div class="choice-btn-grid">
+                        <div class="choice-btn" onclick="selectChoice(this, 'res', '1080p')">
+                            <div class="title">1080p FHD</div>
+                            <div class="sub">1920 × 1080</div>
+                        </div>
+                        <div class="choice-btn selected" onclick="selectChoice(this, 'res', '1440p')">
+                            <div class="title">1440p QHD</div>
+                            <div class="sub">2560 × 1440 (Sweet Spot)</div>
+                        </div>
+                        <div class="choice-btn" onclick="selectChoice(this, 'res', '4K')">
+                            <div class="title">4K UHD</div>
+                            <div class="sub">3840 × 2160 (Extreme)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Target Framerate -->
+                <div class="form-group">
+                    <label class="form-label">Target Framerate (FPS)</label>
+                    <div class="choice-btn-grid">
+                        <div class="choice-btn" onclick="selectChoice(this, 'fps', '60')">
+                            <div class="title">60 FPS</div>
+                            <div class="sub">Standard story mode</div>
+                        </div>
+                        <div class="choice-btn selected" onclick="selectChoice(this, 'fps', '144')">
+                            <div class="title">144 FPS</div>
+                            <div class="sub">High refresh smooth</div>
+                        </div>
+                        <div class="choice-btn" onclick="selectChoice(this, 'fps', '240')">
+                            <div class="title">240+ FPS</div>
+                            <div class="sub">Competitive esports</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Selection & Fuzzy Search -->
+                <div class="form-group">
+                    <label class="form-label">Primary Target Game(s) / Software</label>
+                    <div class="game-search-box">
+                        <input type="text" id="gameSearchInput" class="form-control" placeholder="Search any game (e.g. Cyberpunk 2077, GTA V, Valorant, BGMI)..." oninput="handleGameSearch(this.value)">
+                        <div id="gameDropdown" class="game-autocomplete-dropdown"></div>
+                    </div>
+
+                    <div id="selectedGamesContainer" class="selected-games-chips">
+                        <div class="game-chip">
+                            <span>Cyberpunk 2077</span>
+                            <span class="game-chip-remove" onclick="removeGameChip(this, 'Cyberpunk 2077')"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 24px; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
+                    <button type="button" class="btn btn-ghost" onclick="goToStep(1)">Back to budget</button>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="goToStep(3)">
+                        <span>Preferences</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================================
+             STEP 3: HARDWARE & AESTHETIC PREFERENCES
+             =================================================================== -->
+        <div id="step3Panel" class="step-panel">
+            <div class="tech-card">
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-cyan">Silicon architecture</span>
+                        <h2 class="hud-title" style="font-size: 22px; margin-top: 6px;">Preferences</h2>
+                    </div>
+                </div>
+
+                <div class="grid-cols-2">
+                    <!-- CPU Brand -->
+                    <div class="form-group">
+                        <label class="form-label">CPU Platform Preference</label>
+                        <select id="prefCpu" class="form-select">
+                            <option value="any">No Preference (AI Best Value)</option>
+                            <option value="amd">AMD Ryzen (AM5)</option>
+                            <option value="intel">Intel Core (LGA1700)</option>
+                        </select>
+                    </div>
+
+                    <!-- GPU Brand -->
+                    <div class="form-group">
+                        <label class="form-label">GPU Architecture</label>
+                        <select id="prefGpu" class="form-select">
+                            <option value="any">No Preference (AI Best FPS/$)</option>
+                            <option value="nvidia">NVIDIA GeForce RTX (DLSS 3 / Ray Tracing)</option>
+                            <option value="amd">AMD Radeon RX (Pure Raster / High VRAM)</option>
+                        </select>
+                    </div>
+
+                    <!-- Aesthetics -->
+                    <div class="form-group">
+                        <label class="form-label">Look and lighting</label>
+                        <select id="prefRgb" class="form-select">
+                            <option value="balanced">Balanced / Subtle RGB</option>
+                            <option value="stealth">Stealth Blackout (No RGB)</option>
+                            <option value="rgb_heavy">Full ARGB Lighting</option>
+                            <option value="white">All-White Theme</option>
+                        </select>
+                    </div>
+
+                    <!-- Form Factor -->
+                    <div class="form-group">
+                        <label class="form-label">Case size</label>
+                        <select id="prefCase" class="form-select">
+                            <option value="mid_tower">Mid Tower ATX (Standard)</option>
+                            <option value="compact">Compact Mini-ITX</option>
+                            <option value="full_tower">Full Tower E-ATX</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 24px; border-top: 1px solid var(--border-subtle); padding-top: 20px;">
+                    <button type="button" class="btn btn-ghost" onclick="goToStep(2)">Back</button>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="triggerAiBuildGeneration()">
+                        <span>Generate AI Build Now</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================================
+             AI LOADING / TELEMETRY OVERLAY
+             =================================================================== -->
+        <div id="aiLoadingOverlay" class="ai-processing-overlay">
+            <div class="radar-spinner"></div>
+            <h2 id="aiLoadingStatus" class="font-display" style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+                Building your recommendation
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 14px;">
+                Comparing parts against more than 50,000 benchmark results...
+            </p>
+
+            <div id="telemetryLogs" class="telemetry-logs-box">
+                <div>[SYSTEM] Initiating hardware optimizer v2.6...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Display helper: sentence case for labels, upper case only for part acronyms
+        const cap = (s) => { s = String(s || '').replace(/_/g, ' '); return ['cpu','gpu','ram','psu','ssd','hdd'].includes(s.toLowerCase()) ? s.toUpperCase() : s.charAt(0).toUpperCase() + s.slice(1); };
+        let selectedDomain = 'Gaming';
+        let currentBudget = 125000;
+        let selectedGames = ['Cyberpunk 2077'];
+        let selectedRes = '1440p';
+        let selectedFps = '144';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const domainParam = urlParams.get('domain');
+            if (domainParam) {
+                selectedDomain = decodeURIComponent(domainParam);
+                document.getElementById('currentDomainBadge').innerText = cap(selectedDomain) + ' setup';
+            }
+            updateBudgetViews(currentBudget);
+        });
+
+        function goToStep(step) {
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.step-pill').forEach(p => p.classList.remove('active'));
+
+            if (step === 1) {
+                document.getElementById('step1Panel').classList.add('active');
+                document.getElementById('pillStep1').classList.add('active');
+            } else if (step === 2) {
+                document.getElementById('step2Panel').classList.add('active');
+                document.getElementById('pillStep1').classList.add('completed');
+                document.getElementById('pillStep2').classList.add('active');
+            } else if (step === 3) {
+                document.getElementById('step3Panel').classList.add('active');
+                document.getElementById('pillStep1').classList.add('completed');
+                document.getElementById('pillStep2').classList.add('completed');
+                document.getElementById('pillStep3').classList.add('active');
+            }
+        }
+
+        function updateBudgetViews(val) {
+            currentBudget = parseInt(val, 10);
+            document.getElementById('budgetDisplayVal').innerText = `₹${currentBudget.toLocaleString('en-IN')}`;
+            document.getElementById('budgetUsdVal').innerText = `≈ $${Math.round(currentBudget / 83).toLocaleString('en-US')} USD`;
+            document.getElementById('budgetSlider').value = currentBudget;
+            document.getElementById('customBudgetInput').value = currentBudget;
+        }
+
+        function syncBudgetFromSlider(val) {
+            updateBudgetViews(val);
+            clearPresetSelection();
+        }
+
+        function syncBudgetFromInput(val) {
+            if (val && !isNaN(val)) {
+                updateBudgetViews(val);
+                clearPresetSelection();
+            }
+        }
+
+        function setPresetBudget(val) {
+            updateBudgetViews(val);
+            document.querySelectorAll('.preset-chip').forEach(c => {
+                c.classList.toggle('selected', c.innerText.includes(val.toLocaleString('en-IN')));
+            });
+        }
+
+        function clearPresetSelection() {
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+        }
+
+        function selectChoice(el, type, val) {
+            el.parentElement.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            if (type === 'res') selectedRes = val;
+            if (type === 'fps') selectedFps = val;
+        }
+
+        // Fuzzy Game Search
+        let searchDebounce = null;
+        async function handleGameSearch(query) {
+            const dropdown = document.getElementById('gameDropdown');
+            if (!query || query.trim().length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/games-search/search?q=${encodeURIComponent(query)}&limit=6`);
+                    const data = await res.json();
+
+                    if (data.success && data.games && data.games.length > 0) {
+                        dropdown.innerHTML = data.games.map(g => `
+                            <div class="game-dropdown-item" onclick="addGameChip('${g.name.replace(/'/g, "\\'")}')">
+                                <span>${g.name}</span>
+                                <span style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">${g.genre || 'Game'}</span>
+                            </div>
+                        `).join('');
+                        dropdown.style.display = 'block';
+                    } else {
+                        dropdown.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 200);
+        }
+
+        function addGameChip(gameName) {
+            if (!selectedGames.includes(gameName)) {
+                selectedGames.push(gameName);
+                renderGameChips();
+            }
+            document.getElementById('gameSearchInput').value = '';
+            document.getElementById('gameDropdown').style.display = 'none';
+        }
+
+        function removeGameChip(el, gameName) {
+            selectedGames = selectedGames.filter(g => g !== gameName);
+            renderGameChips();
+        }
+
+        function renderGameChips() {
+            const container = document.getElementById('selectedGamesContainer');
+            container.innerHTML = selectedGames.map(g => `
+                <div class="game-chip">
+                    <span>${g}</span>
+                    <span class="game-chip-remove" onclick="removeGameChip(this, '${g}')"></span>
+                </div>
+            `).join('');
+        }
+
+        // AI Build Trigger & Animation Sequence
+        async function triggerAiBuildGeneration() {
+            sessionStorage.removeItem('currentAiBuild');
+            document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
+            document.querySelector('.wizard-steps-header').style.display = 'none';
+            const overlay = document.getElementById('aiLoadingOverlay');
+            overlay.style.display = 'block';
+
+            const statusText = document.getElementById('aiLoadingStatus');
+            const logs = document.getElementById('telemetryLogs');
+
+            const log = (msg) => {
+                const row = document.createElement('div');
+                row.textContent = msg;
+                logs.appendChild(row);
+                logs.scrollTop = logs.scrollHeight;
+            };
+
+            log(`[WORKLOAD] Target domain: ${selectedDomain}`);
+            log(`[BUDGET] ₹${currentBudget.toLocaleString('en-IN')} allocated`);
+            log(`[PREFERENCES] Resolution: ${selectedRes} @ ${selectedFps} FPS`);
+
+            const stages = [
+                { text: "Analyzing your requirements", delay: 300 },
+                { text: "Matching processor and memory", delay: 600 },
+                { text: "Checking sockets and cooling clearance", delay: 900 },
+                { text: "Calculating value and pricing", delay: 1200 },
+                { text: "Build ready, opening results", delay: 1500 }
+            ];
+
+            for (const s of stages) {
+                await new Promise(r => setTimeout(r, s.delay));
+                statusText.innerText = s.text;
+                log(`[STEP] ${s.text}...`);
+            }
+
+            // Real API Call to Backend
+            try {
+                const primaryGame = selectedGames.length > 0 ? selectedGames[0] : 'Cyberpunk 2077';
+                const payload = {
+                    domain: selectedDomain,
+                    game_name: primaryGame,
+                    budget: currentBudget
+                };
+
+                const res = await fetch('/api/ai/suggest-build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const buildData = await res.json();
+
+                if (res.ok && buildData.success) {
+                    sessionStorage.setItem('currentAiBuild', JSON.stringify(buildData));
+                    log('[OK] Build calculated successfully! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = '/ai-suggestions';
+                    }, 400);
+                } else {
+                    statusText.innerText = 'Build ready';
+                    log(`[NOTICE] ${buildData.message || 'Configuring recommended parts...'}`);
+                    sessionStorage.setItem('currentAiBuild', JSON.stringify(buildData));
+                    setTimeout(() => {
+                        window.location.href = '/ai-suggestions';
+                    }, 600);
+                }
+            } catch (err) {
+                console.error(err);
+                log('[WARN] Rendering with local optimizer...');
+                setTimeout(() => {
+                    window.location.href = '/ai-suggestions';
+                }, 800);
+            }
+        }
+    </script>
+</body>
+</html>

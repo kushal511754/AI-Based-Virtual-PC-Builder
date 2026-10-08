@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Primary Use — AI PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .domain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        .domain-select-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .domain-select-card:hover {
+            border-color: var(--border-subtle-hover);
+            background: var(--bg-card-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .domain-select-card.active-domain {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .domain-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: var(--accent-dim);
+            border: 1px solid var(--border-tech);
+            color: var(--accent);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .domain-weighting-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xs);
+            padding: 8px 10px;
+            margin: 16px 0;
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+
+        .weight-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .weight-item span.label {
+            color: var(--text-muted);
+            font-size: 9px;
+            }
+
+        .weight-item span.val {
+            color: var(--accent);
+            font-weight: 700;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global-fx.css') }}">
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Builder</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/mode-selection" class="nav-link-item">Build setup</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item active">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/home" class="btn btn-ghost btn-sm">Exit wizard</a>
+        </div>
+    </header>
+
+    <main class="layout-container animate-fade-in-up">
+        <div style="text-align: center; max-width: 720px; margin: 20px auto 0 auto;">
+            <div class="badge badge-cyan" style="margin-bottom: 12px;">Step 1 of 3</div>
+            <h1 class="font-display" style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">
+                What will you use this PC for?
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 15px;">
+                Our AI adjusts component budget prioritization (GPU vs CPU vs RAM) based on the computational demands of your primary workload.
+            </p>
+        </div>
+
+        <!-- Domain Selection Grid -->
+        <div class="domain-grid">
+            <!-- Gaming -->
+            <a href="/ai-game-input?domain=Gaming" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></div>
+                    <div class="badge badge-cyan" style="margin-bottom: 6px;">High GPU priority</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        Gaming and esports
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Optimized for maximum framerates (FPS), ray tracing, low latency, and smooth high-refresh gaming at 1080p, 1440p, or 4K.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">GPU share</span>
+                            <span class="val">45-55%</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">CPU share</span>
+                            <span class="val">20-25%</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">RAM speed</span>
+                            <span class="val">High (CL30)</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--accent); margin-top: 12px;">
+                    <span>Select gaming setup</span>
+                    
+                </div>
+            </a>
+
+            <!-- Video Editing -->
+            <a href="/ai-game-input?domain=Video%20Editing" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap" style="color: var(--accent-2-text); background: var(--accent-2-dim); border-color: var(--accent-2-line);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg></div>
+                    <div class="badge badge-purple" style="margin-bottom: 6px;">High RAM & VRAM</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        Video Editing & VFX
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Built for Premiere Pro, DaVinci Resolve, After Effects, 4K/8K timeline playback, multi-track timeline rendering, and hardware NVENC encode.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">CPU cores</span>
+                            <span class="val" style="color: var(--accent-2-text);">8 to 16 cores</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">RAM needed</span>
+                            <span class="val" style="color: var(--accent-2-text);">32-64 GB</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">SSD speed</span>
+                            <span class="val" style="color: var(--accent-2-text);">7000 MB/s</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--accent-2-text); margin-top: 12px;">
+                    <span>Select video editing</span>
+                    
+                </div>
+            </a>
+
+            <!-- Software Development -->
+            <a href="/ai-game-input?domain=Development" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap" style="color: var(--accent-2-text); background: var(--accent-2-dim); border-color: var(--accent-2-line);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg></div>
+                    <div class="badge badge-neutral" style="margin-bottom: 6px;">High CPU & fast storage</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        Software & DevOps
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Optimized for fast project compilation, Docker containers, multi-VM virtualization, IDE responsiveness, and code build pipelines.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">CPU threads</span>
+                            <span class="val" style="color: var(--accent-2-text);">16-32</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">RAM share</span>
+                            <span class="val" style="color: var(--accent-2-text);">32-64 GB</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">Storage</span>
+                            <span class="val" style="color: var(--accent-2-text);">2TB+ NVMe</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--accent-2-text); margin-top: 12px;">
+                    <span>Select development</span>
+                    
+                </div>
+            </a>
+
+            <!-- AI / Machine Learning -->
+            <a href="/ai-game-input?domain=AI%20/%20Machine%20Learning" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap" style="color: var(--ok-text); background: var(--ok-dim); border-color: var(--ok-line);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg></div>
+                    <div class="badge badge-green" style="margin-bottom: 6px;">Tensor cores & VRAM</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        AI / Machine Learning
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Prioritizes NVIDIA CUDA & Tensor cores, huge GPU VRAM buffer for LLM local inference, PyTorch model training, and stable high-wattage PSU.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">GPU memory</span>
+                            <span class="val" style="color: var(--ok-text);">16-24 GB</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">PSU wattage</span>
+                            <span class="val" style="color: var(--ok-text);">850W+ Gold</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">CUDA support</span>
+                            <span class="val" style="color: var(--ok-text);">Essential</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ok-text); margin-top: 12px;">
+                    <span>Select AI & ML</span>
+                    
+                </div>
+            </a>
+
+            <!-- 3D Rendering -->
+            <a href="/ai-game-input?domain=3D%20Rendering" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap" style="color: var(--accent); background: var(--warn-dim); border-color: var(--accent-line);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 2-2c0-.6-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.4a2 2 0 0 1 2-2h2.4a4 4 0 0 0 4-4C21 6 17 2 12 2z"/></svg></div>
+                    <div class="badge badge-amber" style="margin-bottom: 6px;">Ray tracing & multi-core</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        3D Rendering & CAD
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Tuned for Blender, Maya, Unreal Engine 5, SolidWorks, viewport rendering, complex mesh calculations, and heavy polygon scenes.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">OptiX and RT</span>
+                            <span class="val" style="color: var(--accent);">Required</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">RAM headroom</span>
+                            <span class="val" style="color: var(--accent);">32-64 GB</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">Cooling</span>
+                            <span class="val" style="color: var(--accent);">Liquid cooling</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--warn-text); margin-top: 12px;">
+                    <span>Select 3D Rendering</span>
+                    
+                </div>
+            </a>
+
+            <!-- General / Productivity -->
+            <a href="/ai-game-input?domain=Productivity" class="domain-select-card">
+                <div>
+                    <div class="domain-icon-wrap" style="color: var(--ok-text); background: var(--ok-dim); border-color: var(--ok-line);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></div>
+                    <div class="badge badge-neutral" style="margin-bottom: 6px;">Balanced value</div>
+                    <h3 class="font-display" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                        Productivity and office
+                    </h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.45;">
+                        Quiet operation, energy efficiency, multi-monitor multitasking, spreadsheet data processing, and reliable longevity on a budget.
+                    </p>
+
+                    <div class="domain-weighting-bar">
+                        <div class="weight-item">
+                            <span class="label">Energy use</span>
+                            <span class="val" style="color: var(--ok-text);">High</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">Noise level</span>
+                            <span class="val" style="color: var(--ok-text);">Very quiet</span>
+                        </div>
+                        <div class="weight-item">
+                            <span class="label">Value</span>
+                            <span class="val" style="color: var(--ok-text);">98%</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ok-text); margin-top: 12px;">
+                    <span>Select productivity</span>
+                    
+                </div>
+            </a>
+        </div>
+    </main>
+<script src="{{ url_for('static', filename='js/global-fx.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Hardware Visualizer — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+        .viewport-3d-wrapper {
+            display: flex;
+            height: calc(100vh - 64px);
+            position: relative;
+        }
+
+        #threeCanvasContainer {
+            flex: 1;
+            background: var(--bg-surface);
+            position: relative;
+        }
+
+        .visualizer-overlay-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .visualizer-controls-bar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-tech);
+            border-radius: var(--radius-full);
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .drawer-3d-sidebar {
+            width: 360px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-subtle);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        @media (max-width: 900px) {
+            .drawer-3d-sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">3D studio</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/3d-builder" class="nav-link-item active">3D Visualizer</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/manual-builder" class="btn btn-primary btn-sm">Edit in Configurator</a>
+        </div>
+    </header>
+
+    <div class="viewport-3d-wrapper">
+        <!-- 3D Viewport -->
+        <div id="threeCanvasContainer">
+            <!-- HUD Top Left -->
+            <div class="visualizer-overlay-hud">
+                <span class="badge badge-cyan">Render engine: OpenGL / WebGL</span>
+                <div class="hud-panel" style="padding: 12px 16px; background: var(--bg-surface);">
+                    <div style="font-size: 12px; color: var(--text-muted);">Viewport controls</div>
+                    <div style="font-size: 12px; color: var(--text-primary); margin-top: 4px;">Left Click + Drag: Orbit Camera</div>
+                    <div style="font-size: 12px; color: var(--text-primary);">Scroll: Zoom In / Out</div>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Control Pill -->
+            <div class="visualizer-controls-bar">
+                <button onclick="toggleExplodedView()" class="btn btn-ghost btn-sm"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/></svg> Exploded view</button>
+                <button onclick="toggleRgbLighting()" class="btn btn-cyan-outline btn-sm"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 2-2c0-.6-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.4a2 2 0 0 1 2-2h2.4a4 4 0 0 0 4-4C21 6 17 2 12 2z"/></svg> RGB Mode</button>
+                <button onclick="resetCameraView()" class="btn btn-ghost btn-sm"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5M3 12a9 9 0 0 0 15.5 6.2L21 16M16 16h5v5"/></svg> Reset view</button>
+            </div>
+        </div>
+
+        <!-- Right Side Bill of Materials Drawer -->
+        <aside class="drawer-3d-sidebar">
+            <div>
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-cyan">Chassis payload</span>
+                        <h2 class="hud-title" style="font-size: 18px; margin-top: 4px;">Installed parts</h2>
+                    </div>
+                </div>
+
+                <div id="installedPartsList3D" style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 18px; margin-top: 18px;">
+                <div class="flex-between" style="margin-bottom: 12px;">
+                    <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">Estimated total</span>
+                    <span id="price3DDisplay" style="font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--accent);">₹1,24,500</span>
+                </div>
+
+                <a href="/summary" class="btn btn-primary btn-block">
+                    <span>Export parts list</span>
+                </a>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let scene, camera, renderer, caseGroup, rgbLight;
+        let isExploded = false;
+        let isRgb = true;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            init3DScene();
+            load3DPartsList();
+        });
+
+        function init3DScene() {
+            const container = document.getElementById('threeCanvasContainer');
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(14, 10, 18);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Scene colors come from the CSS variables in styles.css
+            const cssColor = (name) => new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(cssColor('--c-surface'), 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(cssColor('--c-surface'), 1.0);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            rgbLight = new THREE.PointLight(cssColor('--c-highlight'), 2, 50);
+            rgbLight.position.set(0, 2, 0);
+            scene.add(rgbLight);
+
+            // Grid Floor
+            const gridHelper = new THREE.GridHelper(30, 30, cssColor('--c-line-strong'), cssColor('--c-line'));
+            gridHelper.position.y = -4;
+            scene.add(gridHelper);
+
+            // Build PC Case Geometry
+            caseGroup = new THREE.Group();
+
+            // Case Frame (Semi-transparent Glass/Steel)
+            const caseMat = new THREE.MeshPhysicalMaterial({
+                color: cssColor('--c-text'),
+                metalness: 0.8,
+                roughness: 0.2,
+                transparent: true,
+                opacity: 0.65
+            });
+            const chassis = new THREE.Mesh(new THREE.BoxGeometry(6, 9, 8), caseMat);
+            caseGroup.add(chassis);
+
+            // Motherboard
+            const moboMat = new THREE.MeshStandardMaterial({ color: cssColor('--c-muted'), roughness: 0.5 });
+            const mobo = new THREE.Mesh(new THREE.BoxGeometry(0.2, 7, 5.5), moboMat);
+            mobo.position.set(-2, 0, 0);
+            caseGroup.add(mobo);
+
+            // GPU
+            const gpuMat = new THREE.MeshStandardMaterial({ color: cssColor('--c-primary'), metalness: 0.9, roughness: 0.1 });
+            const gpu = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.5, 5), gpuMat);
+            gpu.position.set(-0.8, -1.2, 0);
+            gpu.name = 'gpuMesh';
+            caseGroup.add(gpu);
+
+            // CPU Cooler
+            const coolerMat = new THREE.MeshStandardMaterial({ color: cssColor('--c-accent'), metalness: 0.7 });
+            const cooler = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.5, 16), coolerMat);
+            cooler.rotation.z = Math.PI / 2;
+            cooler.position.set(-0.8, 1.4, 0);
+            cooler.name = 'coolerMesh';
+            caseGroup.add(cooler);
+
+            scene.add(caseGroup);
+
+            // Mouse Interaction Orbit
+            let isDragging = false;
+            let prevMousePos = { x: 0, y: 0 };
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                prevMousePos = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - prevMousePos.x;
+                const deltaY = e.clientY - prevMousePos.y;
+
+                caseGroup.rotation.y += deltaX * 0.008;
+                caseGroup.rotation.x += deltaY * 0.008;
+
+                prevMousePos = { x: e.clientX, y: e.clientY };
+            });
+
+            container.addEventListener('wheel', (e) => {
+                camera.position.z += e.deltaY * 0.02;
+                camera.position.z = Math.max(8, Math.min(35, camera.position.z));
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            // Animation Loop
+            let clock = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                clock += 0.02;
+
+                if (!isDragging) {
+                    caseGroup.rotation.y += 0.002;
+                }
+
+                if (isRgb && rgbLight) {
+                    rgbLight.color.setHSL((clock * 0.1) % 1, 0.9, 0.5);
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function toggleExplodedView() {
+            isExploded = !isExploded;
+            const gpu = caseGroup.getObjectByName('gpuMesh');
+            const cooler = caseGroup.getObjectByName('coolerMesh');
+
+            if (isExploded) {
+                if (gpu) gpu.position.x = 2.5;
+                if (cooler) cooler.position.x = 2.5;
+            } else {
+                if (gpu) gpu.position.x = -0.8;
+                if (cooler) cooler.position.x = -0.8;
+            }
+        }
+
+        function toggleRgbLighting() {
+            isRgb = !isRgb;
+            if (!isRgb) rgbLight.color.set(getComputedStyle(document.documentElement).getPropertyValue('--c-highlight').trim());
+        }
+
+        function resetCameraView() {
+            camera.position.set(14, 10, 18);
+            camera.lookAt(0, 0, 0);
+            caseGroup.rotation.set(0, 0, 0);
+        }
+
+        function load3DPartsList() {
+            const container = document.getElementById('installedPartsList3D');
+            const cached = localStorage.getItem('activeBuildParts');
+            let parts = {};
+
+            if (cached) {
+                try { parts = JSON.parse(cached); } catch(e){}
+            }
+
+            const items = [
+                { key: 'cpu', label: 'CPU', name: parts.cpu?.name || 'Intel Core i5-13600K' },
+                { key: 'gpu', label: 'GPU', name: parts.gpu?.name || 'NVIDIA RTX 4070' },
+                { key: 'motherboard', label: 'Motherboard', name: parts.motherboard?.name || 'MSI B760 TOMAHAWK' },
+                { key: 'ram', label: 'RAM', name: parts.ram?.name || 'Corsair Vengeance DDR5 32GB' },
+                { key: 'storage', label: 'Storage', name: parts.storage?.name || 'Samsung 990 Pro 2TB' },
+                { key: 'psu', label: 'PSU', name: parts.psu?.name || 'Seasonic 750W Gold' }
+            ];
+
+            container.innerHTML = items.map(i => `
+                <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--bg-inset); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); font-size: 12px;">
+                    <span style="color: var(--accent); font-family: var(--font-mono); font-weight: 700;">${i.label}</span>
+                    <span style="color: var(--text-primary); font-weight: 600; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${i.name}</span>
+                </div>
+            `).join('');
+
+            const storedPrice = localStorage.getItem('activeBuildPrice');
+            if (storedPrice) {
+                document.getElementById('price3DDisplay').innerText = `₹${parseInt(storedPrice).toLocaleString('en-IN')}`;
+            }
+        }
+    </script>
+</body>
+</html>

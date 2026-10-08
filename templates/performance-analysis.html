@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Performance & Compatibility Lab — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .benchmark-grid-cols {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .resolution-toggle-group {
+            display: flex;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .res-pill-btn {
+            padding: 6px 14px;
+            border-radius: var(--radius-xs);
+            font-size: 12px;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--text-secondary);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+
+        .res-pill-btn.active {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid var(--accent-line);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .compat-check-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+        }
+
+        .compat-check-row.valid {
+            border-left: 3px solid var(--ok);
+        }
+        .compat-check-row.warning {
+            border-left: 3px solid var(--warn);
+        }
+        .compat-check-row.error {
+            border-left: 3px solid var(--bad);
+        }
+
+        @media (max-width: 960px) {
+            .benchmark-grid-cols {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Performance lab</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item">AI Builder</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item active">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/manual-builder" class="btn btn-ghost btn-sm">Back to builder</a>
+        </div>
+    </header>
+
+    <main class="layout-container animate-fade-in-up">
+        <!-- Top Lab Title -->
+        <div class="flex-between" style="margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <span class="badge badge-cyan">Telemetry & hardware matrix</span>
+                <h1 class="font-display" style="font-size: 28px; font-weight: 700; margin-top: 6px;">
+                    Performance and compatibility
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 14px;">
+                    Estimated frame rates, cooling capacity and compatibility checks.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="/manual-builder" class="btn btn-secondary btn-sm">Modify parts</a>
+                <a href="/summary" class="btn btn-primary btn-sm">Export report</a>
+            </div>
+        </div>
+
+        <!-- Metric Telemetry Cards -->
+        <div class="stats-summary-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div class="metric-box">
+                <span class="metric-label">Estimated power draw</span>
+                <span class="metric-value" style="color: var(--accent);">485 Watts</span>
+                <span style="font-size: 12px; color: var(--text-muted);">Recommended PSU: 750W</span>
+            </div>
+
+            <div class="metric-box">
+                <span class="metric-label">Power headroom</span>
+                <span class="metric-value" style="color: var(--ok-text);">35.3%</span>
+                <span style="font-size: 12px; color: var(--ok-text);">Safe for spikes and overclocking</span>
+            </div>
+
+            <div class="metric-box">
+                <span class="metric-label">Compatibility</span>
+                <span class="metric-value" style="color: var(--accent);">100%</span>
+                <span style="font-size: 12px; color: var(--ok-text);">5 of 5 Checks Passed</span>
+            </div>
+
+            <div class="metric-box">
+                <span class="metric-label">Cooling headroom</span>
+                <span class="metric-value" style="color: var(--accent-2-text);">250W rating</span>
+                <span style="font-size: 12px; color: var(--text-muted);">Delta T: &lt; 72°C Max</span>
+            </div>
+        </div>
+
+        <!-- Section 1: Benchmark Charts & Power Specs -->
+        <div class="benchmark-grid-cols">
+            <!-- Left Chart -->
+            <div class="tech-card">
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-cyan">Gaming estimates</span>
+                        <h2 class="hud-title" style="font-size: 17px; margin-top: 4px;">Target FPS Projection</h2>
+                    </div>
+
+                    <div class="resolution-toggle-group">
+                        <button class="res-pill-btn" onclick="switchResolution('1080p', this)">1080p</button>
+                        <button class="res-pill-btn active" onclick="switchResolution('1440p', this)">1440p</button>
+                        <button class="res-pill-btn" onclick="switchResolution('4K', this)">4K</button>
+                    </div>
+                </div>
+
+                <div style="height: 280px; position: relative; margin-top: 10px;">
+                    <canvas id="fpsChartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Cost Allocation Donut -->
+            <div class="tech-card">
+                <div class="hud-header">
+                    <div>
+                        <span class="badge badge-purple">Budget efficiency</span>
+                        <h2 class="hud-title" style="font-size: 17px; margin-top: 4px;">Cost by part</h2>
+                    </div>
+                </div>
+
+                <div style="height: 220px; position: relative;">
+                    <canvas id="budgetDonutCanvas"></canvas>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+                    <span>GPU share: 42%</span>
+                    <span>CPU share: 22%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Hardware Compatibility Matrix -->
+        <div class="tech-card" style="margin-bottom: 30px;">
+            <div class="hud-header">
+                <div>
+                    <span class="badge badge-green">Verified architecture</span>
+                    <h2 class="hud-title" style="font-size: 18px; margin-top: 4px;">Compatibility checks</h2>
+                </div>
+                <span class="badge badge-green">All systems go</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- CPU vs Motherboard -->
+                <div class="compat-check-row valid">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 14px; margin-bottom: 2px;">
+                            CPU socket and motherboard match
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            Intel Core i5-13600K (LGA1700) is physically and electrically compatible with MSI B760 TOMAHAWK (LGA1700).
+                        </div>
+                    </div>
+                    <span class="badge badge-green">Matched</span>
+                </div>
+
+                <!-- RAM vs Motherboard -->
+                <div class="compat-check-row valid">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 14px; margin-bottom: 2px;">
+                            RAM Architecture & DDR Generation
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            DDR5-6000MHz memory modules match the DDR5 slot topology and XMP 3.0 controller profiles.
+                        </div>
+                    </div>
+                    <span class="badge badge-green">Optimal</span>
+                </div>
+
+                <!-- GPU vs Chassis Clearance -->
+                <div class="compat-check-row valid">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 14px; margin-bottom: 2px;">
+                            GPU length and case clearance
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            GPU Length (285mm) fits comfortably within Case Max GPU clearance (420mm) with 135mm excess space for front radiators.
+                        </div>
+                    </div>
+                    <span class="badge badge-green">135mm clearance</span>
+                </div>
+
+                <!-- PSU Wattage Headroom -->
+                <div class="compat-check-row valid">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 14px; margin-bottom: 2px;">
+                            Power supply capacity and efficiency
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            Selected 750W 80+ Gold PSU delivers 265W headroom above total estimated 485W transient peak load.
+                        </div>
+                    </div>
+                    <span class="badge badge-green">+265w headroom</span>
+                </div>
+
+                <!-- Cooler TDP vs CPU Thermal Output -->
+                <div class="compat-check-row valid">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 14px; margin-bottom: 2px;">
+                            Cooler heat rating
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            Cooler TDP Rating (250W) safely exceeds CPU Turbo Power draw (181W max PL2 limit).
+                        </div>
+                    </div>
+                    <span class="badge badge-green">Sub-70°C expected</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let fpsChart = null;
+        let budgetChart = null;
+
+        const fpsData = {
+            '1080p': [128, 142, 165, 98, 240],
+            '1440p': [92, 108, 126, 74, 185],
+            '4K': [58, 64, 78, 46, 110]
+        };
+
+        const gameLabels = ['Cyberpunk 2077', 'GTA V', 'Warzone 2.0', 'Starfield', 'Valorant'];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initFpsChart('1440p');
+            initBudgetChart();
+        });
+
+        // Chart.js needs real color values, so read them from the CSS variables
+        const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+        function initFpsChart(res) {
+            const ctx = document.getElementById('fpsChartCanvas').getContext('2d');
+            if (fpsChart) fpsChart.destroy();
+
+            fpsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: gameLabels,
+                    datasets: [{
+                        label: `Estimated FPS (${res})`,
+                        data: fpsData[res],
+                        backgroundColor: css('--c-primary-line'),
+                        borderColor: css('--c-primary'),
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: css('--c-line') },
+                            ticks: { color: css('--c-muted'), font: { family: css('--font-mono'), size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: css('--c-text'), font: { family: css('--font-body'), size: 12 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function switchResolution(res, btn) {
+            document.querySelectorAll('.res-pill-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            initFpsChart(res);
+        }
+
+        function initBudgetChart() {
+            const ctx = document.getElementById('budgetDonutCanvas').getContext('2d');
+            budgetChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['GPU', 'CPU', 'Motherboard', 'Storage', 'RAM', 'Power/Case/Cooling'],
+                    datasets: [{
+                        data: [42, 22, 14, 10, 6, 6],
+                        backgroundColor: [
+                            css('--c-primary'),
+                            css('--c-accent'),
+                            css('--c-highlight'),
+                            css('--c-primary-line'),
+                            css('--c-accent-ink'),
+                            css('--c-line-strong')
+                        ],
+                        borderColor: css('--c-surface'),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: css('--c-muted'),
+                                font: { family: css('--font-body'), size: 12 },
+                                boxWidth: 12
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    </script>
+</body>
+</html>

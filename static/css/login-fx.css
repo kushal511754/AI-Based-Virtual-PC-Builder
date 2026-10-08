@@ -1,0 +1,61 @@
+/* Login page motion graphics, transitions and cursor tracker */
+/* --- animated backdrop with dot grid --- */
+.fx-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.fx-bg i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.28}
+.fx-bg i:nth-child(1){width:46vmax;height:46vmax;left:-12vmax;top:-14vmax;background:radial-gradient(circle,#9BD91A,transparent 68%);
+  animation:fxDrift 18s ease-in-out infinite alternate}
+.fx-bg i:nth-child(2){width:38vmax;height:38vmax;right:-10vmax;bottom:-12vmax;background:radial-gradient(circle,#2EC48A,transparent 68%);
+  animation:fxDrift 22s ease-in-out -6s infinite alternate-reverse}
+.fx-bg i:nth-child(3){width:26vmax;height:26vmax;right:12%;top:-8vmax;opacity:.4;background:radial-gradient(circle,#FF7A2E,transparent 68%);
+  animation:fxDrift 26s ease-in-out -12s infinite alternate}
+@keyframes fxDrift{to{transform:translate(6vmax,4vmax) scale(1.15)}}
+.fx-bg::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,#C8FF3D 1.2px,transparent 1.7px);background-size:26px 26px}
+.fx-bg::before{opacity:.13}
+
+/* --- left panel: "compatibility check" animation --- */
+.fx-stage{flex:1;min-height:210px;margin:6px 0 14px;display:flex;flex-direction:column;justify-content:center}
+.fx-stage svg{width:100%;height:auto;max-height:250px;overflow:visible}
+.fx-stage .tr{fill:none;stroke:#434B38;stroke-width:2;stroke-linejoin:round}
+.fx-stage .pl{fill:none;stroke:#C8FF3D;stroke-width:3;stroke-linecap:round;stroke-dasharray:14 200;stroke-dashoffset:14;
+  animation:fxPulse 4.8s linear infinite;animation-delay:calc(var(--k)*.55s)}
+@keyframes fxPulse{0%{stroke-dashoffset:14}40%,100%{stroke-dashoffset:-100}}
+.fx-stage .chip rect{fill:#151813;stroke:#434B38;stroke-width:1.5}
+.fx-stage text{font:600 12px ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;fill:#F3F5EC;text-anchor:middle}
+.fx-stage .bob{animation:fxBob 3.6s ease-in-out infinite alternate;animation-delay:calc(var(--k)*-.9s)}
+@keyframes fxBob{to{transform:translateY(-6px)}}
+.fx-stage .ok{transform-box:fill-box;transform-origin:center;animation:fxOk 4.8s ease infinite;animation-delay:calc(var(--k)*.55s)}
+@keyframes fxOk{0%,36%{transform:scale(0);opacity:0}44%{transform:scale(1.25);opacity:1}50%,90%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
+.fx-stage .cpu{fill:#C8FF3D}
+.fx-stage .cpu-t{fill:#0C0E0B;font-size:14px;font-weight:700}
+.fx-stage .core{transform-box:fill-box;transform-origin:center;animation:fxBreath 2.4s ease-in-out infinite}
+@keyframes fxBreath{50%{transform:scale(1.06)}}
+.fx-stage .ring{fill:none;stroke:#7C9A2A;stroke-width:1.5;stroke-dasharray:4 9;transform-box:fill-box;transform-origin:center;animation:fxSpin 26s linear infinite}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+.fx-term{display:grid;margin-top:6px;height:18px;font:500 12px/1.5 ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;color:#B7BEAB}
+.fx-term span{grid-area:1/1;overflow:hidden;white-space:nowrap;width:0;opacity:0;border-right:1.5px solid #C8FF3D;
+  animation:fxType 6s steps(28,end) infinite;animation-delay:calc(var(--k)*2s)}
+@keyframes fxType{0%{width:0;opacity:1}18%{width:var(--w);opacity:1}30%{width:var(--w);opacity:1;border-color:transparent}33%,100%{width:var(--w);opacity:0}}
+
+/* --- entrance + title shimmer + form transitions --- */
+.fx-rise{animation:fxRise .75s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*60ms + 150ms)}
+@keyframes fxRise{from{opacity:0;transform:translateY(18px);filter:blur(4px)}}
+.brand-huge-title .text-accent{background:linear-gradient(100deg,#C8FF3D 35%,#F1FFC4 50%,#C8FF3D 65%);background-size:240% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:fxShine 4.5s ease-in-out infinite}
+@keyframes fxShine{from{background-position:120% 0}to{background-position:-120% 0}}
+.form-control{transition:box-shadow .25s,transform .25s,border-color .25s}
+.form-control:focus{transform:translateY(-1px);box-shadow:0 0 0 4px rgba(200,255,61,.14),0 10px 20px -12px rgba(200,255,61,.55)}
+.form-label{transition:color .25s}
+.form-group:focus-within .form-label{color:#C8FF3D}
+.btn,.btn-social{position:relative;overflow:hidden}
+.fx-ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.28;pointer-events:none;transform:scale(0);animation:fxRip .6s ease-out forwards}
+@keyframes fxRip{to{transform:scale(1);opacity:0}}
+#submitBtn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);transform:translateX(-120%);pointer-events:none}
+#submitBtn:hover::after{transition:transform .7s;transform:translateX(120%)}
+
+/* --- page transitions --- */
+.fx-veil{position:fixed;inset:0;z-index:100000;background:#000;pointer-events:none;animation:fxVeil .7s ease-out .05s forwards}
+@keyframes fxVeil{to{opacity:0;visibility:hidden}}
+.fx-wipe{position:fixed;inset:0;z-index:100000;background:#C8FF3D;pointer-events:none;
+  clip-path:circle(0 at var(--wx,50%) var(--wy,50%));transition:clip-path .6s cubic-bezier(.7,0,.3,1)}
+.fx-wipe.go{clip-path:circle(150vmax at var(--wx,50%) var(--wy,50%))}
+@media (prefers-reduced-motion:reduce){.fx-veil{display:none}.fx-spot{display:none}}

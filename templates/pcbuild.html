@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Recommended Build — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .pcbuild-container {
+            max-width: 1100px;
+            margin: 28px auto 60px auto;
+            padding: 0 20px;
+        }
+
+        .builder-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .metrics-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .price-summary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 24px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+        }
+
+        .price-summary h2 {
+            font-family: var(--font-display);
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 13.5px;
+        }
+
+        .price-row.total {
+            border-bottom: 1px solid var(--accent);
+            border-top: 1px solid var(--border-subtle);
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--accent);
+            font-family: var(--font-mono);
+            margin-top: 8px;
+            padding: 14px 0;
+        }
+
+        .price-label {
+            color: var(--text-secondary);
+        }
+
+        .price-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .component-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--accent);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            transition: border-color .15s, background .15s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .component-card:hover {
+            border-color: var(--border-subtle-hover);
+            background: var(--bg-card-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .component-card.cpu { border-left-color: var(--ok-text); }
+        .component-card.gpu { border-left-color: var(--accent-2-text); }
+        .component-card.motherboard { border-left-color: var(--accent-2-text); }
+        .component-card.ram { border-left-color: var(--ok-text); }
+        .component-card.storage { border-left-color: var(--accent); }
+        .component-card.psu { border-left-color: var(--accent); }
+        .component-card.case { border-left-color: var(--accent-2-text); }
+        .component-card.cooler { border-left-color: var(--ok-text); }
+
+        .component-header {
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .component-name {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .component-specs {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .component-source {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .component-price {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            }
+
+        .confidence-high {
+            background: var(--ok-dim);
+            color: var(--ok-text);
+            border: 1px solid var(--ok-dim);
+        }
+
+        .confidence-medium {
+            background: var(--warn-dim);
+            color: var(--accent);
+            border: 1px solid var(--accent-line);
+        }
+
+        .confidence-low {
+            background: var(--bad-dim);
+            color: var(--bad-text);
+            border: 1px solid var(--bad-dim);
+        }
+
+        /* Build Details / Telemetry Logs Box (Dark Smoked Glass) */
+        .validation-logs {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 22px;
+            margin-top: 24px;
+            position: relative;
+        }
+
+        .validation-logs h3 {
+            font-family: var(--font-display);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-item {
+            padding: 6px 0;
+            color: var(--text-secondary);
+            font-size: 12.5px;
+            font-family: var(--font-mono);
+            border-bottom: 1px solid var(--bg-inset);
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-warning {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .warnings-banner {
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-line);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin-top: 20px;
+            color: var(--accent-hover);
+            font-size: 13px;
+        }
+
+        .warnings-banner h4 {
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--bg-inset);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-overview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Recommender</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item active">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <a href="/home" class="btn btn-ghost btn-sm">Dashboard</a>
+        </div>
+    </header>
+
+    <div class="pcbuild-container animate-fade-in-up">
+        <!-- Top Header -->
+        <div style="margin-bottom: 24px;">
+            <span class="badge badge-cyan" style="margin-bottom: 8px;">Indian hardware engine</span>
+            <h1 class="font-display" style="font-size: 28px; font-weight: 700; color: var(--text-primary);">
+                AI-Recommended Build
+            </h1>
+            <p id="buildConfigSubtitle" style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">
+                Generate realistic PC builds with live Indian market pricing in INR (₹).
+            </p>
+        </div>
+
+        <!-- Interactive Form Section -->
+        <div class="builder-section" id="configSection">
+            <h2 class="font-display" style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 18px;">
+                Set up your build
+            </h2>
+            
+            <form id="buildForm">
+                <div class="grid-cols-2" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label" for="domain">Target Domain / Workload</label>
+                        <select id="domain" class="form-select" required>
+                            <option value="gaming">Gaming</option>
+                            <option value="video_editing">Video editing</option>
+                            <option value="rendering">3D Rendering & VFX</option>
+                            <option value="streaming">Live streaming</option>
+                            <option value="programming">Software and game development</option>
+                            <option value="general_purpose">General purpose</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="budget">Budget Target (INR ₹)</label>
+                        <input type="number" id="budget" class="form-control" placeholder="e.g. 75000" min="20000" step="5000" value="75000" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="gameNameInput">Target Game or Software (Optional)</label>
+                    <input type="text" id="gameNameInput" class="form-control" placeholder="e.g. PUBG, Cyberpunk 2077, GTA V, Blender" value="PUBG">
+                </div>
+
+                <button type="submit" id="generateBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 10px;">
+                    <span>Generate PC Build</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="color: var(--text-secondary); font-size: 14px;">Building your recommendation...</p>
+            </div>
+
+            <div id="buildResults" style="display: none;">
+                <!-- Telemetry 4 Cards Row -->
+                <div class="metrics-overview-grid">
+                    <div class="metric-box">
+                        <span class="metric-label">Domain</span>
+                        <span id="metricDomain" class="metric-value" style="color: var(--accent);">GAMING</span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">Budget</span>
+                        <span id="metricBudget" class="metric-value">₹75,000</span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">Total price</span>
+                        <span id="metricTotal" class="metric-value" style="color: var(--ok-text);">₹54,500</span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">Compatibility</span>
+                        <span id="metricCompat" class="metric-value" style="color: var(--ok-text);">0 Issues</span>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 20px;">
+                    Pricing Source: Indian Market (PCBuild Agent)
+                </div>
+
+                <!-- Build Details / Telemetry Logs Box (Dark Smoked Glass) -->
+                <div class="validation-logs" id="validationLogs">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Warnings Banner -->
+                <div class="warnings-banner" id="warningsBanner">
+                    <h4>Compatibility and pricing notice</h4>
+                    <p style="margin-top: 4px;">Note: Compatibility verified based on specifications. Verify with retailer before purchase.</p>
+                </div>
+
+                <!-- Price Summary -->
+                <div class="price-summary" id="priceSummary" style="margin-top: 24px;"></div>
+
+                <!-- Components Grid -->
+                <h3 class="font-display" style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">
+                    Recommended parts
+                </h3>
+                <div class="components-grid" id="componentsGrid"></div>
+
+                <!-- Action Bar -->
+                <div class="action-bar">
+                    <button type="button" onclick="window.history.back()" class="btn btn-secondary">
+                        <span>Back</span>
+                    </button>
+                    <button type="button" onclick="applyThisBuild()" class="btn btn-success btn-lg">
+                        <span>Apply this build</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // Display helper: sentence case for labels, upper case only for part acronyms
+        const cap = (s) => { s = String(s || '').replace(/_/g, ' '); return ['cpu','gpu','ram','psu','ssd','hdd'].includes(s.toLowerCase()) ? s.toUpperCase() : s.charAt(0).toUpperCase() + s.slice(1); };
+        const form = document.getElementById('buildForm');
+        const domainSelect = document.getElementById('domain');
+        const budgetInput = document.getElementById('budget');
+        const gameNameInput = document.getElementById('gameNameInput');
+        const resultsSection = document.getElementById('resultsSection');
+        const loadingDiv = document.getElementById('loading');
+        const buildResults = document.getElementById('buildResults');
+        const priceSummary = document.getElementById('priceSummary');
+        const componentsGrid = document.getElementById('componentsGrid');
+        const validationLogs = document.getElementById('validationLogs');
+        let currentBuildData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const domainParam = urlParams.get('domain');
+            const budgetParam = urlParams.get('budget');
+            const gameParam = urlParams.get('game');
+
+            if (domainParam) domainSelect.value = domainParam;
+            if (budgetParam) budgetInput.value = budgetParam;
+            if (gameParam) gameNameInput.value = gameParam;
+
+            // Auto-trigger if parameters exist
+            if (domainParam || budgetParam) {
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const domain = domainSelect.value;
+            const budget = parseInt(budgetInput.value);
+            const game = gameNameInput.value.trim() || 'General';
+
+            if (!domain || !budget) {
+                showToast('Please select a domain and enter a budget');
+                return;
+            }
+
+            document.getElementById('buildConfigSubtitle').innerText = `Building for ${game} with ₹${budget.toLocaleString('en-IN')} budget.`;
+
+            try {
+                resultsSection.classList.add('show');
+                buildResults.style.display = 'none';
+                loadingDiv.classList.add('show');
+
+                const response = await fetch('/api/ai/suggest-build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        domain: domain,
+                        budget: budget,
+                        game_name: game
+                    })
+                });
+
+                const data = await response.json();
+                loadingDiv.classList.remove('show');
+
+                if (data.success) {
+                    currentBuildData = data;
+                    displayResults(data);
+                } else {
+                    showToast(data.message || 'Error generating build.');
+                }
+            } catch (error) {
+                loadingDiv.classList.remove('show');
+                showToast('Error generating build: ' + error.message);
+            }
+        });
+
+        function displayResults(data) {
+            buildResults.style.display = 'block';
+
+            // Metrics Update
+            document.getElementById('metricDomain').innerText = cap(data.domain || 'Gaming');
+            document.getElementById('metricBudget').innerText = `₹${(data.budget || parseInt(budgetInput.value)).toLocaleString('en-IN')}`;
+            document.getElementById('metricTotal').innerText = `₹${(data.total_price || 0).toLocaleString('en-IN')}`;
+            document.getElementById('metricCompat').innerText = data.compatibility?.compatible !== false ? '0 Issues' : 'Review Needed';
+
+            // Display price summary
+            const subtotal = data.total_price ? Math.round(data.total_price * 0.91) : 50000;
+            const buffer = data.total_price - subtotal;
+            let priceHtml = `
+                <h2>Financial Breakdown</h2>
+                <div class="price-row">
+                    <span class="price-label">Hardware Subtotal</span>
+                    <span class="price-value">₹${subtotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-label">Estimated Taxes & Shipping Buffer (9%)</span>
+                    <span class="price-value">₹${buffer.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="price-row total">
+                    <span class="price-label">Total With Buffer</span>
+                    <span class="price-value">₹${(data.total_price || 0).toLocaleString('en-IN')}</span>
+                </div>
+            `;
+            priceSummary.innerHTML = priceHtml;
+
+            // Display components
+            componentsGrid.innerHTML = '';
+            const parts = data.suggested_parts || {};
+
+            for (const [category, part] of Object.entries(parts)) {
+                if (part && part.name) {
+                    const price = part.price_inr !== undefined ? part.price_inr : (part.price ? Math.round(part.price * 83) : 8500);
+                    const confidence = part.confidence || 'medium';
+                    const confidenceBadge = `<span class="confidence-badge confidence-${confidence}">${confidence}</span>`;
+                    
+                    const componentHtml = `
+                        <div class="component-card ${category}">
+                            <div>
+                                <div class="component-header">
+                                    <span>${cap(category)}</span>
+                                    ${confidenceBadge}
+                                </div>
+                                <div class="component-name">${part.name}</div>
+                                <div class="component-specs">${part.specs || 'Optimized for target workload'}</div>
+                                <div class="component-source">Source: ${part.price_source || 'Indian Market Feeds'}</div>
+                            </div>
+                            <div class="component-price">₹${price.toLocaleString('en-IN')}</div>
+                        </div>
+                    `;
+                    componentsGrid.innerHTML += componentHtml;
+                }
+            }
+
+            // Display validation logs in Dark Smoked Glass Box
+            const logs = data.validation_logs || [
+                `Optimizing build for: ${data.game_name || 'Selected Workload'}`,
+                `Target budget: ₹${(data.budget || 75000).toLocaleString('en-IN')}`,
+                `Subtotal: ₹${subtotal.toLocaleString('en-IN')}`,
+                `Total with buffer: ₹${(data.total_price || 54500).toLocaleString('en-IN')}`
+            ];
+
+            let logsHtml = '<h3>Build details</h3>';
+            for (const log of logs) {
+                const isWarning = log.includes('WARNING') || log.includes('warning');
+                const logClass = isWarning ? 'log-warning' : '';
+                logsHtml += `<div class="log-item ${logClass}">${log}</div>`;
+            }
+            validationLogs.innerHTML = logsHtml;
+
+            // Scroll smoothly to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function applyThisBuild() {
+            if (currentBuildData && currentBuildData.suggested_parts) {
+                localStorage.setItem('activeBuildParts', JSON.stringify(currentBuildData.suggested_parts));
+                localStorage.setItem('activeBuildPrice', currentBuildData.total_price || 0);
+                showToast('Build applied. Opening the builder...');
+                setTimeout(() => {
+                    window.location.href = '/manual-builder?transfer=ai';
+                }, 400);
+            } else {
+                window.location.href = '/manual-builder';
+            }
+        }
+    </script>
+</body>
+</html>

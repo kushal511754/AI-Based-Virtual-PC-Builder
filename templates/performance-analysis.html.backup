@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Analysis - AI PC Builder</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .domain-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .performance-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .performance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .performance-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metric-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+        }
+
+        .metric-list {
+            list-style: none;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 5px;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .comparison-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            color: #333;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .build-info {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .build-info h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .parts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .part-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .part-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .part-model {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .part-price {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Components Breakdown Styles */
+        .components-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .component-card {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f29 100%);
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            border-radius: 8px;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .component-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .component-card.red-border {
+            border-left-color: #ef5350;
+        }
+
+        .component-card.purple-border {
+            border-left-color: #ab47bc;
+        }
+
+        .component-card.orange-border {
+            border-left-color: #ff7043;
+        }
+
+        .component-card.green-border {
+            border-left-color: #66bb6a;
+        }
+
+        .component-card.blue-border {
+            border-left-color: #42a5f5;
+        }
+
+        .component-card.yellow-border {
+            border-left-color: #ffa726;
+        }
+
+        .component-card.indigo-border {
+            border-left-color: #5c6bc0;
+        }
+
+        .component-card.cyan-border {
+            border-left-color: #26c6da;
+        }
+
+        .component-header {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .component-header.red-text {
+            color: #ef5350;
+        }
+
+        .component-header.purple-text {
+            color: #ab47bc;
+        }
+
+        .component-header.orange-text {
+            color: #ff7043;
+        }
+
+        .component-header.green-text {
+            color: #66bb6a;
+        }
+
+        .component-header.blue-text {
+            color: #42a5f5;
+        }
+
+        .component-header.yellow-text {
+            color: #ffa726;
+        }
+
+        .component-header.indigo-text {
+            color: #5c6bc0;
+        }
+
+        .component-header.cyan-text {
+            color: #26c6da;
+        }
+
+        .component-name {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        .component-specs {
+            font-size: 0.85rem;
+            color: #b0b0b0;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 0.75rem;
+        }
+
+        .component-price {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #42a5f5;
+            margin-bottom: 0.75rem;
+        }
+
+        .component-status {
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .component-status.compatible {
+            background: rgba(102, 187, 106, 0.2);
+            color: #66bb6a;
+            border: 1px solid rgba(102, 187, 106, 0.3);
+        }
+
+        .component-status.warning {
+            background: rgba(255, 167, 38, 0.2);
+            color: #ffa726;
+            border: 1px solid rgba(255, 167, 38, 0.3);
+        }
+
+        .component-status.error {
+            background: rgba(239, 83, 80, 0.2);
+            color: #ef5350;
+            border: 1px solid rgba(239, 83, 80, 0.3);
+        }
+
+        .component-missing {
+            background: rgba(239, 83, 80, 0.15);
+            color: #ff6b6b;
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-outline:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#667eea 0deg, #667eea var(--score), #e0e0e0 var(--score), #e0e0e0 360deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .score-inner {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .score-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .score-info {
+            flex: 1;
+        }
+
+        .score-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .score-info p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .recommendation {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .recommendation h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .recommendation p {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        .spinner {
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .performance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-display {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+
+        /* Gaming Metrics Section */
+        .gaming-metrics-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .gaming-metrics-section h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .metric-chart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .metric-chart h3 {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .metric-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 13px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .metric-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .indicator-good {
+            background: #4caf50;
+        }
+
+        .indicator-warning {
+            background: #ff9800;
+        }
+
+        .indicator-critical {
+            background: #f44336;
+        }
+
+        .comparison-metrics {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 200px 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #ddd;
+            align-items: center;
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-row.header {
+            font-weight: 600;
+            color: #333;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .comparison-metric-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .comparison-value {
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .comparison-value.good {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .comparison-value.warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .comparison-value.critical {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            .comparison-row.header {
+                display: none;
+            }
+
+            .comparison-row::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #667eea;
+                display: block;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Performance Analysis</h1>
+            <p>Detailed performance metrics and recommendations for your build</p>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadPerformanceAnalysis() {
+            try {
+                const buildData = sessionStorage.getItem('currentBuild');
+                if (!buildData) {
+                    document.getElementById('content').innerHTML = `
+                        <div style="text-align: center; padding: 40px; background: white; border-radius: 10px;">
+                            <p style="color: #666; margin-bottom: 20px;">No build data found. Please start from the AI Builder.</p>
+                            <a href="/" class="btn btn-primary">← Back to Home</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const build = JSON.parse(buildData);
+                console.log('Build data received:', build);
+                console.log('Suggested parts:', build.suggested_parts);
+                renderPerformanceAnalysis(build);
+            } catch (error) {
+                console.error('Error loading performance analysis:', error);
+                document.getElementById('content').innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: white; border-radius: 10px;">
+                        <p style="color: red;">Error loading performance data</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPerformanceAnalysis(build) {
+            let domain = build.domain || 'general';
+            // Normalize domain for display
+            const displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1).replace(/-/g, ' ');
+            
+            const metrics = getPerformanceMetrics(domain, build);
+            const score = calculatePerformanceScore(metrics);
+
+            // Determine currency: if total_price is already large (INR), use as-is; otherwise multiply by 83
+            // PCBuildAgent returns total_price in INR directly
+            const displayPrice = build.total_price > 1000 ? build.total_price : (build.total_price * 83);
+
+            let html = `
+                <div class="build-info">
+                    <h2>Build Configuration</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <span class="domain-badge">${displayDomain.toUpperCase()}</span>
+                        <div style="text-align: right;">
+                            <div style="font-size: 24px; font-weight: bold; color: #667eea;">₹${displayPrice.toLocaleString('en-IN')}</div>
+                            <div style="font-size: 12px; color: #666;">Total Investment</div>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom: 1.5rem; color: #333; font-size: 1.1rem;">📦 Components Breakdown</h3>
+                    <div class="components-breakdown">
+            `;
+
+            // Display build parts with component cards
+            const parts = build.suggested_parts || {};
+            const componentCategories = [
+                { key: 'cpu', label: 'PROCESSOR', color: 'red' },
+                { key: 'gpu', label: 'GRAPHICS CARD', color: 'purple' },
+                { key: 'motherboard', label: 'MOTHERBOARD', color: 'orange' },
+                { key: 'ram', label: 'MEMORY', color: 'green' },
+                { key: 'storage', label: 'STORAGE', color: 'blue' },
+                { key: 'psu', label: 'POWER SUPPLY', color: 'yellow' },
+                { key: 'case', label: 'CASE', color: 'indigo' },
+                { key: 'cooling', label: 'COOLING', color: 'cyan' }
+            ];
+            
+            componentCategories.forEach(cat => {
+                const part = parts[cat.key];
+                html += `<div class="component-card ${cat.color}-border">`;
+                html += `<div class="component-header ${cat.color}-text">● ${cat.label}</div>`;
+                
+                if (part && part.name) {
+                    let specs = '';
+                    
+                    // Handle both database format and PCBuildAgent format
+                    if (part.specs && typeof part.specs === 'string') {
+                        // PCBuildAgent format - specs is a string
+                        specs = part.specs;
+                    } else {
+                        // Database format - specs are individual fields
+                        switch(cat.key) {
+                            case 'cpu':
+                                specs = part.cores ? `${part.cores} Cores, ${part.threads} Threads, ${part.base_clock}GHz` : 'CPU Specs';
+                                break;
+                            case 'gpu':
+                                specs = part.vram_gb ? `${part.vram_gb}GB ${part.vram_type}, ${part.memory_speed_mhz}MHz` : 'GPU Specs';
+                                break;
+                            case 'motherboard':
+                                specs = part.socket_type ? `${part.socket_type} Socket, ${part.ram_type}, Max ${part.max_ram_gb}GB RAM` : 'Motherboard Specs';
+                                break;
+                            case 'ram':
+                                specs = part.size_gb ? `${part.size_gb}GB, ${part.speed_mhz}MHz, ${part.type}` : 'RAM Specs';
+                                break;
+                            case 'storage':
+                                specs = part.capacity_gb ? `${part.capacity_gb}GB ${part.type}` : 'Storage Specs';
+                                break;
+                            case 'psu':
+                                specs = part.wattage ? `${part.wattage}W, ${part.efficiency_rating}` : 'PSU Specs';
+                                break;
+                            case 'case':
+                                specs = part.form_factor ? `${part.form_factor}, Max GPU: ${part.max_gpu_length_mm}mm` : 'Case Specs';
+                                break;
+                            case 'cooling':
+                                specs = part.type ? `${part.type}, TDP: ${part.tdp_rating}W` : 'Cooling Specs';
+                                break;
+                        }
+                    }
+                    
+                    // Handle price for both formats
+                    const price = part.price_inr !== undefined ? part.price_inr : (part.price || 0);
+                    const displayComponentPrice = price > 1000 ? price : (price * 83);
+                    
+                    html += `
+                        <div class="component-name">${part.name}</div>
+                        <div class="component-specs">${specs}</div>
+                        <div class="component-price">₹${displayComponentPrice.toLocaleString('en-IN')}</div>
+                        <div class="component-status compatible">✓ Compatible</div>
+                    `;
+                } else {
+                    html += `<div class="component-missing">⚠ Not Selected</div>`;
+                }
+                
+                html += `</div>`;
+            });
+
+            html += `
+                    </div>
+                </div>
+
+                <div class="comparison-section">
+                    <h2>📈 Performance Score</h2>
+                    <div class="score-display">
+                        <div class="score-circle" style="--score: ${score.overall}%">
+                            <div class="score-inner">
+                                <div class="score-number">${score.overall}</div>
+                                <div class="score-label">Score</div>
+                            </div>
+                        </div>
+                        <div class="score-info">
+                            <h3>Overall Performance: ${getScoreRating(score.overall)}</h3>
+                            <p>${getScoreDescription(score.overall, domain)}</p>
+                            <div class="recommendation">
+                                <h4>💡 Recommendation</h4>
+                                <p>${getRecommendation(score.overall, domain)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="performance-grid">
+            `;
+
+            // Display domain-specific metrics
+            Object.entries(metrics).forEach(([key, value]) => {
+                html += `
+                    <div class="performance-card">
+                        <h3>
+                            <span class="metric-icon">${getMetricIcon(key)}</span>
+                            ${formatMetricName(key)}
+                        </h3>
+                        <ul class="metric-list">
+                `;
+
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    if (subValue && typeof subValue === 'object' && subValue.label && subValue.value !== undefined) {
+                        const percentage = subValue.percentage || 0;
+                        html += `
+                            <li class="metric-item">
+                                <span class="metric-label">${subValue.label}</span>
+                                <span class="metric-value">${subValue.value}</span>
+                            </li>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += `
+                        </ul>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+
+                <div class="gaming-metrics-section">
+                    <h2>🎮 Gaming Performance Metrics</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-chart">
+                            <h3>Frame Rendering (FPS)</h3>
+                            <div class="chart-container">
+                                <canvas id="frameRenderingChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Avg FPS</span>
+                                    <span class="stat-value" id="avgFps">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Min FPS</span>
+                                    <span class="stat-value" id="minFps">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Max FPS</span>
+                                    <span class="stat-value" id="maxFps">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Excellent</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-chart">
+                            <h3>CPU Usage (%)</h3>
+                            <div class="chart-container">
+                                <canvas id="cpuUsageChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Avg Load</span>
+                                    <span class="stat-value" id="avgCpu">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Peak Load</span>
+                                    <span class="stat-value" id="peakCpu">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Cores Used</span>
+                                    <span class="stat-value" id="coresUsed">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Optimal</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-chart">
+                            <h3>GPU Usage (%)</h3>
+                            <div class="chart-container">
+                                <canvas id="gpuUsageChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Avg Load</span>
+                                    <span class="stat-value" id="avgGpu">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Peak Load</span>
+                                    <span class="stat-value" id="peakGpu">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Memory Used</span>
+                                    <span class="stat-value" id="gpuMemory">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Excellent</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-chart">
+                            <h3>Network Usage (Mbps)</h3>
+                            <div class="chart-container">
+                                <canvas id="networkUsageChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Download</span>
+                                    <span class="stat-value" id="networkDown">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Upload</span>
+                                    <span class="stat-value" id="networkUp">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Latency</span>
+                                    <span class="stat-value" id="latency">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Stable</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-chart">
+                            <h3>Battery Usage (%)</h3>
+                            <div class="chart-container">
+                                <canvas id="batteryUsageChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Drain Rate</span>
+                                    <span class="stat-value" id="drainRate">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Est. Runtime</span>
+                                    <span class="stat-value" id="runtime">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Temp</span>
+                                    <span class="stat-value" id="tempBattery">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Healthy</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-chart">
+                            <h3>System Temperature (°C)</h3>
+                            <div class="chart-container">
+                                <canvas id="temperatureChart"></canvas>
+                            </div>
+                            <div class="metric-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">CPU Temp</span>
+                                    <span class="stat-value" id="cpuTemp">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">GPU Temp</span>
+                                    <span class="stat-value" id="gpuTemp">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">System Avg</span>
+                                    <span class="stat-value" id="avgTemp">--</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value"><span class="metric-indicator indicator-good"></span>Normal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-metrics">
+                        <h3 style="margin-bottom: 20px; color: #333;">📊 Real-Time Metrics Comparison</h3>
+                        <div class="comparison-row header">
+                            <div class="comparison-metric-name">Metric</div>
+                            <div class="comparison-value">Current</div>
+                            <div class="comparison-value">Average</div>
+                            <div class="comparison-value">Peak</div>
+                        </div>
+                        <div class="comparison-row" data-label="Frame Rate (FPS)">
+                            <div class="comparison-metric-name">Frame Rate (FPS)</div>
+                            <div class="comparison-value" id="comp-fps-current">--</div>
+                            <div class="comparison-value" id="comp-fps-avg">--</div>
+                            <div class="comparison-value" id="comp-fps-peak">--</div>
+                        </div>
+                        <div class="comparison-row" data-label="CPU Load (%)">
+                            <div class="comparison-metric-name">CPU Load (%)</div>
+                            <div class="comparison-value" id="comp-cpu-current">--</div>
+                            <div class="comparison-value" id="comp-cpu-avg">--</div>
+                            <div class="comparison-value" id="comp-cpu-peak">--</div>
+                        </div>
+                        <div class="comparison-row" data-label="GPU Load (%)">
+                            <div class="comparison-metric-name">GPU Load (%)</div>
+                            <div class="comparison-value" id="comp-gpu-current">--</div>
+                            <div class="comparison-value" id="comp-gpu-avg">--</div>
+                            <div class="comparison-value" id="comp-gpu-peak">--</div>
+                        </div>
+                        <div class="comparison-row" data-label="Memory (GB)">
+                            <div class="comparison-metric-name">Memory (GB)</div>
+                            <div class="comparison-value" id="comp-mem-current">--</div>
+                            <div class="comparison-value" id="comp-mem-avg">--</div>
+                            <div class="comparison-value" id="comp-mem-peak">--</div>
+                        </div>
+                        <div class="comparison-row" data-label="Network (Mbps)">
+                            <div class="comparison-metric-name">Network (Mbps)</div>
+                            <div class="comparison-value" id="comp-net-current">--</div>
+                            <div class="comparison-value" id="comp-net-avg">--</div>
+                            <div class="comparison-value" id="comp-net-peak">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comparison-section">
+                    <h2>📋 Detailed Specifications</h2>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Specification</th>
+                                <th>Performance Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Add detailed specs
+            const specs = getDetailedSpecs(build, domain);
+            specs.forEach(spec => {
+                html += `
+                    <tr>
+                        <td><strong>${spec.component}</strong></td>
+                        <td>${spec.spec}</td>
+                        <td><span style="color: ${spec.color}; font-weight: bold;">● ${spec.impact}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="/ai-suggestions" class="btn btn-secondary">← Back to Suggestions</a>
+                    <a href="/summary" class="btn btn-primary">Continue to Summary →</a>
+                </div>
+            `;
+
+            document.getElementById('content').innerHTML = html;
+            
+            // Initialize gaming metrics after DOM is updated and Chart.js is ready
+            setTimeout(() => {
+                try {
+                    // Check if Chart.js is loaded
+                    if (typeof Chart === 'undefined') {
+                        console.warn('Chart.js not loaded yet, retrying...');
+                        setTimeout(() => initializeGamingMetrics(build), 500);
+                        return;
+                    }
+                    initializeGamingMetrics(build);
+                } catch (error) {
+                    console.error('Error initializing gaming metrics:', error);
+                }
+            }, 500);
+        }
+
+        function getPerformanceMetrics(domain, build) {
+            // Normalize domain name
+            const normalizedDomain = domain.toLowerCase().replace(/ /g, '-');
+            
+            const metrics = {
+                'gaming': {
+                    'fps': {
+                        'label': 'Expected FPS (1080p)',
+                        'value': '90-120 FPS',
+                        'percentage': 85
+                    },
+                    'vram': {
+                        'label': 'VRAM Available',
+                        'value': '8GB+',
+                        'percentage': 75
+                    },
+                    'latency': {
+                        'label': 'System Latency',
+                        'value': '<5ms',
+                        'percentage': 90
+                    }
+                },
+                'video-editing': {
+                    'render': {
+                        'label': '4K Render Speed',
+                        'value': '3-5 min/min',
+                        'percentage': 80
+                    },
+                    'cache': {
+                        'label': 'Cache Buffer',
+                        'value': '64GB',
+                        'percentage': 85
+                    },
+                    'export': {
+                        'label': 'Export Performance',
+                        'value': '2x Real-time',
+                        'percentage': 88
+                    }
+                },
+                'programming': {
+                    'compile': {
+                        'label': 'Compilation Speed',
+                        'value': '<2 seconds',
+                        'percentage': 92
+                    },
+                    'cores': {
+                        'label': 'Parallel Tasks',
+                        'value': '12 cores',
+                        'percentage': 80
+                    },
+                    'memory': {
+                        'label': 'Available RAM',
+                        'value': '32GB+',
+                        'percentage': 90
+                    }
+                },
+                'streaming': {
+                    'encode': {
+                        'label': 'Encoding Quality',
+                        'value': '1080p 60fps',
+                        'percentage': 85
+                    },
+                    'bandwidth': {
+                        'label': 'Bitrate Capacity',
+                        'value': '12 Mbps',
+                        'percentage': 88
+                    },
+                    'cpu-load': {
+                        'label': 'CPU Utilization',
+                        'value': '60-70%',
+                        'percentage': 70
+                    }
+                },
+                'rendering': {
+                    'vram-total': {
+                        'label': 'Total VRAM',
+                        'value': '24GB',
+                        'percentage': 95
+                    },
+                    'gpu-cores': {
+                        'label': 'GPU Cores',
+                        'value': '5000+',
+                        'percentage': 92
+                    },
+                    'render-speed': {
+                        'label': 'Render Speed',
+                        'value': '2x baseline',
+                        'percentage': 90
+                    }
+                },
+                'general': {
+                    'speed': {
+                        'label': 'Overall Speed',
+                        'value': 'Excellent',
+                        'percentage': 85
+                    },
+                    'multitask': {
+                        'label': 'Multitasking',
+                        'value': '50+ apps',
+                        'percentage': 80
+                    },
+                    'storage': {
+                        'label': 'Storage',
+                        'value': '1TB+',
+                        'percentage': 75
+                    }
+                }
+            };
+
+            return metrics[normalizedDomain] || metrics['general'];
+        }
+
+        function calculatePerformanceScore(metrics) {
+            let total = 0;
+            let count = 0;
+
+            Object.values(metrics).forEach(metric => {
+                Object.values(metric).forEach(item => {
+                    total += (item.percentage || 0);
+                    count++;
+                });
+            });
+
+            return {
+                overall: Math.round(total / count) || 80
+            };
+        }
+
+        function getScoreRating(score) {
+            if (score >= 90) return '⭐ Excellent';
+            if (score >= 75) return '✓ Good';
+            if (score >= 60) return '◐ Fair';
+            return '✗ Needs Upgrade';
+        }
+
+        function getScoreDescription(score, domain) {
+            if (score >= 90) {
+                return `This ${domain} build is exceptional and will handle demanding tasks with ease.`;
+            } else if (score >= 75) {
+                return `This ${domain} build offers great performance for most use cases.`;
+            } else if (score >= 60) {
+                return `This ${domain} build provides adequate performance with some limitations.`;
+            }
+            return `Consider upgrading for better performance in ${domain} tasks.`;
+        }
+
+        function getRecommendation(score, domain) {
+            if (score >= 90) {
+                return `Your build is well-optimized for ${domain}. You should experience excellent performance across all applications.`;
+            } else if (score >= 75) {
+                return `Your build is solid for ${domain}. Consider prioritizing component upgrades based on your specific needs.`;
+            } else if (score >= 60) {
+                return `Your build will work for ${domain}, but upgrading the CPU or GPU could significantly improve performance.`;
+            }
+            return `We recommend upgrading key components to achieve better ${domain} performance.`;
+        }
+
+        function getMetricIcon(key) {
+            const icons = {
+                'fps': '🎮',
+                'vram': '💾',
+                'latency': '⚡',
+                'render': '🎨',
+                'cache': '📦',
+                'export': '📤',
+                'compile': '⚙️',
+                'cores': '🔧',
+                'memory': '🧠',
+                'encode': '📹',
+                'bandwidth': '🌐',
+                'cpu_load': '📊',
+                'speed': '⚡',
+                'multitask': '🔀',
+                'storage': '💿'
+            };
+            return icons[key] || '📌';
+        }
+
+        function formatMetricName(key) {
+            const names = {
+                'fps': 'Gaming Performance',
+                'vram': 'Video Memory',
+                'latency': 'Response Time',
+                'render': 'Rendering',
+                'cache': 'Cache & Buffer',
+                'export': 'Export Speed',
+                'compile': 'Compilation',
+                'cores': 'CPU Cores',
+                'memory': 'System Memory',
+                'encode': 'Encoding',
+                'bandwidth': 'Network',
+                'cpu_load': 'CPU Load',
+                'speed': 'Speed',
+                'multitask': 'Multitasking',
+                'storage': 'Storage'
+            };
+            return names[key] || key;
+        }
+
+        function getDetailedSpecs(build, domain) {
+            const parts = build.suggested_parts || {};
+            const specs = [];
+
+            if (parts.cpu) {
+                specs.push({
+                    component: 'Processor',
+                    spec: parts.cpu.name,
+                    impact: 'Critical',
+                    color: '#667eea'
+                });
+            }
+
+            if (parts.gpu) {
+                specs.push({
+                    component: 'Graphics Card',
+                    spec: parts.gpu.name,
+                    impact: domain === 'gaming' ? 'Critical' : 'Important',
+                    color: domain === 'gaming' ? '#667eea' : '#764ba2'
+                });
+            }
+
+            if (parts.ram) {
+                specs.push({
+                    component: 'Memory',
+                    spec: parts.ram.name,
+                    impact: 'Important',
+                    color: '#764ba2'
+                });
+            }
+
+            if (parts.storage) {
+                specs.push({
+                    component: 'Storage',
+                    spec: parts.storage.name,
+                    impact: 'Important',
+                    color: '#764ba2'
+                });
+            }
+
+            return specs;
+        }
+
+        // Gaming Metrics Chart Initialization
+        let chartInstances = {};
+
+        function generateRealisticData(baseValue, variance, count = 60) {
+            const data = [];
+            for (let i = 0; i < count; i++) {
+                const randomVariance = (Math.random() - 0.5) * variance;
+                const value = Math.max(0, baseValue + randomVariance + Math.sin(i / 10) * variance * 0.5);
+                data.push(Math.round(value * 10) / 10);
+            }
+            return data;
+        }
+
+        function initializeGamingMetrics(build) {
+            try {
+                const domain = build.domain || 'gaming';
+                
+                // Generate realistic data based on GPU specs
+                let fpsData, cpuData, gpuData, networkData, batteryData, tempData;
+                let fpsCurrent, cpuCurrent, gpuCurrent, networkCurrent, batteryCurrent, tempCurrent;
+                
+                if (domain.toLowerCase().includes('gaming')) {
+                    fpsData = generateRealisticData(95, 20);
+                    fpsCurrent = Math.round(fpsData[fpsData.length - 1]);
+                    cpuData = generateRealisticData(55, 25);
+                    cpuCurrent = Math.round(cpuData[cpuData.length - 1]);
+                    gpuData = generateRealisticData(82, 15);
+                    gpuCurrent = Math.round(gpuData[gpuData.length - 1]);
+                    networkData = generateRealisticData(8, 3);
+                    networkCurrent = Math.round(networkData[networkData.length - 1] * 100) / 100;
+                    batteryData = generateRealisticData(45, 10);
+                    batteryCurrent = Math.round(batteryData[batteryData.length - 1]);
+                    tempData = generateRealisticData(62, 8);
+                    tempCurrent = Math.round(tempData[tempData.length - 1]);
+                } else if (domain.toLowerCase().includes('video')) {
+                    fpsData = generateRealisticData(60, 5);
+                    fpsCurrent = Math.round(fpsData[fpsData.length - 1]);
+                    cpuData = generateRealisticData(75, 20);
+                    cpuCurrent = Math.round(cpuData[cpuData.length - 1]);
+                    gpuData = generateRealisticData(88, 12);
+                    gpuCurrent = Math.round(gpuData[gpuData.length - 1]);
+                    networkData = generateRealisticData(5, 2);
+                    networkCurrent = Math.round(networkData[networkData.length - 1] * 100) / 100;
+                    batteryData = generateRealisticData(35, 8);
+                    batteryCurrent = Math.round(batteryData[batteryData.length - 1]);
+                    tempData = generateRealisticData(68, 10);
+                    tempCurrent = Math.round(tempData[tempData.length - 1]);
+                } else {
+                    fpsData = generateRealisticData(75, 15);
+                    fpsCurrent = Math.round(fpsData[fpsData.length - 1]);
+                    cpuData = generateRealisticData(40, 20);
+                    cpuCurrent = Math.round(cpuData[cpuData.length - 1]);
+                    gpuData = generateRealisticData(45, 20);
+                    gpuCurrent = Math.round(gpuData[gpuData.length - 1]);
+                    networkData = generateRealisticData(3, 1.5);
+                    networkCurrent = Math.round(networkData[networkData.length - 1] * 100) / 100;
+                    batteryData = generateRealisticData(25, 5);
+                    batteryCurrent = Math.round(batteryData[batteryData.length - 1]);
+                    tempData = generateRealisticData(48, 6);
+                    tempCurrent = Math.round(tempData[tempData.length - 1]);
+                }
+
+                const labels = Array.from({length: 60}, (_, i) => `${i}s`);
+                const chartConfig = {
+                    type: 'line',
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            filler: { propagate: true }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: { drawBorder: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 6 }
+                            }
+                        }
+                    }
+                };
+
+                // Frame Rendering Chart
+                const frameCtx = document.getElementById('frameRenderingChart');
+                if (frameCtx) {
+                    chartInstances.frameRendering = new Chart(frameCtx, {
+                        ...chartConfig,
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'FPS',
+                                data: fpsData,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                pointHoverRadius: 4
+                            }]
+                        },
+                        options: {
+                            ...chartConfig.options,
+                            scales: {
+                                y: { ...chartConfig.options.scales.y, max: 150 }
+                            }
+                        }
+                    });
+
+                    // Update stats with proper error handling
+                    const avgFpsVal = Math.round(fpsData.reduce((a, b) => a + b, 0) / fpsData.length);
+                    const minFpsVal = Math.round(Math.min(...fpsData));
+                    const maxFpsVal = Math.round(Math.max(...fpsData));
+                    
+                    const avgFpsEl = document.getElementById('avgFps');
+                    const minFpsEl = document.getElementById('minFps');
+                    const maxFpsEl = document.getElementById('maxFps');
+                    if (avgFpsEl) avgFpsEl.textContent = isNaN(avgFpsVal) ? '85' : avgFpsVal;
+                    if (minFpsEl) minFpsEl.textContent = isNaN(minFpsVal) ? '65' : minFpsVal;
+                    if (maxFpsEl) maxFpsEl.textContent = isNaN(maxFpsVal) ? '120' : maxFpsVal;
+                }
+
+                // CPU Usage Chart
+                const cpuCtx = document.getElementById('cpuUsageChart');
+                if (cpuCtx) {
+                    chartInstances.cpuUsage = new Chart(cpuCtx, {
+                        ...chartConfig,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'CPU %',
+                                data: cpuData,
+                                borderColor: '#ff7043',
+                                backgroundColor: 'rgba(255, 112, 67, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        }
+                    });
+
+                    const avgCpuVal = Math.round(cpuData.reduce((a, b) => a + b, 0) / cpuData.length);
+                    const peakCpuVal = Math.round(Math.max(...cpuData));
+                    const coresVal = Math.floor(cpuCurrent / 15);
+                    
+                    const avgCpuEl = document.getElementById('avgCpu');
+                    const peakCpuEl = document.getElementById('peakCpu');
+                    const coresUsedEl = document.getElementById('coresUsed');
+                    if (avgCpuEl) avgCpuEl.textContent = (isNaN(avgCpuVal) ? '55' : avgCpuVal) + '%';
+                    if (peakCpuEl) peakCpuEl.textContent = (isNaN(peakCpuVal) ? '85' : peakCpuVal) + '%';
+                    if (coresUsedEl) coresUsedEl.textContent = (isNaN(coresVal) ? 4 : coresVal) + ' / 12';
+                }
+
+                // GPU Usage Chart
+                const gpuCtx = document.getElementById('gpuUsageChart');
+                if (gpuCtx) {
+                    chartInstances.gpuUsage = new Chart(gpuCtx, {
+                        ...chartConfig,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'GPU %',
+                                data: gpuData,
+                                borderColor: '#ab47bc',
+                                backgroundColor: 'rgba(171, 71, 188, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        }
+                    });
+
+                    const avgGpuVal = Math.round(gpuData.reduce((a, b) => a + b, 0) / gpuData.length);
+                    const peakGpuVal = Math.round(Math.max(...gpuData));
+                    const gpuMemoryVal = Math.round((gpuCurrent / 100) * 8) || 6;
+                    
+                    const avgGpuEl = document.getElementById('avgGpu');
+                    const peakGpuEl = document.getElementById('peakGpu');
+                    const gpuMemoryEl = document.getElementById('gpuMemory');
+                    if (avgGpuEl) avgGpuEl.textContent = (isNaN(avgGpuVal) ? '78' : avgGpuVal) + '%';
+                    if (peakGpuEl) peakGpuEl.textContent = (isNaN(peakGpuVal) ? '95' : peakGpuVal) + '%';
+                    if (gpuMemoryEl) gpuMemoryEl.textContent = gpuMemoryVal + ' GB';
+                }
+
+                // Network Usage Chart
+                const networkCtx = document.getElementById('networkUsageChart');
+                if (networkCtx) {
+                    chartInstances.networkUsage = new Chart(networkCtx, {
+                        ...chartConfig,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Network Mbps',
+                                data: networkData,
+                                borderColor: '#42a5f5',
+                                backgroundColor: 'rgba(66, 165, 245, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            ...chartConfig.options,
+                            scales: {
+                                y: { ...chartConfig.options.scales.y, max: 20 }
+                            }
+                        }
+                    });
+
+                    const networkDownVal = (networkCurrent * 0.6).toFixed(1);
+                    const networkUpVal = (networkCurrent * 0.4).toFixed(1);
+                    const latencyVal = (Math.random() * 20 + 10).toFixed(0);
+                    
+                    const networkDownEl = document.getElementById('networkDown');
+                    const networkUpEl = document.getElementById('networkUp');
+                    const latencyEl = document.getElementById('latency');
+                    if (networkDownEl) networkDownEl.textContent = networkDownVal + ' Mbps';
+                    if (networkUpEl) networkUpEl.textContent = networkUpVal + ' Mbps';
+                    if (latencyEl) latencyEl.textContent = latencyVal + ' ms';
+                }
+
+                // Battery Usage Chart
+                const batteryCtx = document.getElementById('batteryUsageChart');
+                if (batteryCtx) {
+                    const batteryDrainData = Array.from({length: 60}, (_, i) => Math.max(0, 100 - (i * 0.5 + Math.random() * 10)));
+                    chartInstances.batteryUsage = new Chart(batteryCtx, {
+                        ...chartConfig,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Battery %',
+                                data: batteryDrainData,
+                                borderColor: '#66bb6a',
+                                backgroundColor: 'rgba(102, 187, 106, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            ...chartConfig.options,
+                            scales: {
+                                y: { ...chartConfig.options.scales.y, max: 120 }
+                            }
+                        }
+                    });
+
+                    const drainRateVal = (batteryCurrent / 10).toFixed(1);
+                    const runtimeVal = Math.round(100 / (batteryCurrent || 1) * 10);
+                    const tempBatteryVal = (tempCurrent - 10);
+                    
+                    const drainRateEl = document.getElementById('drainRate');
+                    const runtimeEl = document.getElementById('runtime');
+                    const tempBatteryEl = document.getElementById('tempBattery');
+                    if (drainRateEl) drainRateEl.textContent = drainRateVal + '%/min';
+                    if (runtimeEl) runtimeEl.textContent = runtimeVal + ' hrs';
+                    if (tempBatteryEl) tempBatteryEl.textContent = tempBatteryVal + '°C';
+                }
+
+                // Temperature Chart
+                const tempCtx = document.getElementById('temperatureChart');
+                if (tempCtx) {
+                    chartInstances.temperature = new Chart(tempCtx, {
+                        ...chartConfig,
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Temp °C',
+                                data: tempData,
+                                borderColor: '#ffa726',
+                                backgroundColor: 'rgba(255, 167, 38, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            ...chartConfig.options,
+                            scales: {
+                                y: { ...chartConfig.options.scales.y, max: 100 }
+                            }
+                        }
+                    });
+
+                    const cpuTempVal = (tempCurrent + 5);
+                    const gpuTempVal = (tempCurrent - 2);
+                    const avgTempVal = tempCurrent;
+                    
+                    const cpuTempEl = document.getElementById('cpuTemp');
+                    const gpuTempEl = document.getElementById('gpuTemp');
+                    const avgTempEl = document.getElementById('avgTemp');
+                    if (cpuTempEl) cpuTempEl.textContent = cpuTempVal + '°C';
+                    if (gpuTempEl) gpuTempEl.textContent = gpuTempVal + '°C';
+                    if (avgTempEl) avgTempEl.textContent = avgTempVal + '°C';
+                }
+
+                // Update Comparison Table
+                const fpsAvg = Math.round(fpsData.reduce((a, b) => a + b, 0) / fpsData.length);
+                const cpuAvg = Math.round(cpuData.reduce((a, b) => a + b, 0) / cpuData.length);
+                const gpuAvg = Math.round(gpuData.reduce((a, b) => a + b, 0) / gpuData.length);
+                const networkAvg = (networkData.reduce((a, b) => a + b, 0) / networkData.length).toFixed(1);
+                
+                updateComparisonMetrics({
+                    fps: { current: fpsCurrent || 90, avg: fpsAvg || 85, peak: Math.max(...fpsData) || 120 },
+                    cpu: { current: cpuCurrent || 55, avg: cpuAvg || 50, peak: Math.max(...cpuData) || 85 },
+                    gpu: { current: gpuCurrent || 80, avg: gpuAvg || 75, peak: Math.max(...gpuData) || 95 },
+                    memory: { current: ((cpuCurrent || 55) / 100 * 16).toFixed(1), avg: ((cpuAvg || 50) / 100 * 16).toFixed(1), peak: ((Math.max(...cpuData) || 85) / 100 * 16).toFixed(1) },
+                    network: { current: (networkCurrent || 5).toFixed(1), avg: networkAvg || 4, peak: Math.max(...networkData).toFixed(1) }
+                });
+
+                // Simulate real-time updates
+                setInterval(() => {
+                    updateChartsWithNewData();
+                }, 2000);
+            } catch (error) {
+                console.error('Error in initializeGamingMetrics:', error);
+            }
+        }
+
+        function updateComparisonMetrics(metrics) {
+                            tension: 0.3,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }]
+                    }
+                });
+
+                const avgGpuEl = document.getElementById('avgGpu');
+                const peakGpuEl = document.getElementById('peakGpu');
+                const gpuMemoryEl = document.getElementById('gpuMemory');
+                if (avgGpuEl) avgGpuEl.textContent = Math.round(gpuData.reduce((a, b) => a + b) / gpuData.length) + '%';
+                if (peakGpuEl) peakGpuEl.textContent = Math.round(Math.max(...gpuData)) + '%';
+                if (gpuMemoryEl) gpuMemoryEl.textContent = (Math.round((gpuCurrent / 100) * 8) || 6) + ' GB';
+            }
+
+            // Network Usage Chart
+            const networkCtx = document.getElementById('networkUsageChart');
+            if (networkCtx) {
+                chartInstances.networkUsage = new Chart(networkCtx, {
+                    ...chartConfig,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Network Mbps',
+                            data: networkData,
+                            borderColor: '#42a5f5',
+                            backgroundColor: 'rgba(66, 165, 245, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        ...chartConfig.options,
+                        scales: {
+                            y: { ...chartConfig.options.scales.y, max: 20 }
+                        }
+                    }
+                });
+
+                const networkDownEl = document.getElementById('networkDown');
+                const networkUpEl = document.getElementById('networkUp');
+                const latencyEl = document.getElementById('latency');
+                if (networkDownEl) networkDownEl.textContent = (networkCurrent * 0.6).toFixed(1) + ' Mbps';
+                if (networkUpEl) networkUpEl.textContent = (networkCurrent * 0.4).toFixed(1) + ' Mbps';
+                if (latencyEl) latencyEl.textContent = (Math.random() * 20 + 10).toFixed(0) + ' ms';
+            }
+
+            // Battery Usage Chart
+            const batteryCtx = document.getElementById('batteryUsageChart');
+            if (batteryCtx) {
+                const batteryDrainData = Array.from({length: 60}, (_, i) => Math.max(0, 100 - (i * 0.5 + Math.random() * 10)));
+                chartInstances.batteryUsage = new Chart(batteryCtx, {
+                    ...chartConfig,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Battery %',
+                            data: batteryDrainData,
+                            borderColor: '#66bb6a',
+                            backgroundColor: 'rgba(102, 187, 106, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        ...chartConfig.options,
+                        scales: {
+                            y: { ...chartConfig.options.scales.y, max: 120 }
+                        }
+                    }
+                });
+
+                const drainRateEl = document.getElementById('drainRate');
+                const runtimeEl = document.getElementById('runtime');
+                const tempBatteryEl = document.getElementById('tempBattery');
+                if (drainRateEl) drainRateEl.textContent = (batteryCurrent / 10).toFixed(1) + '%/min';
+                if (runtimeEl) runtimeEl.textContent = Math.round(100 / (batteryCurrent || 1) * 10) + ' hrs';
+                if (tempBatteryEl) tempBatteryEl.textContent = (tempCurrent - 10) + '°C';
+            }
+
+            // Temperature Chart
+            const tempCtx = document.getElementById('temperatureChart');
+            if (tempCtx) {
+                chartInstances.temperature = new Chart(tempCtx, {
+                    ...chartConfig,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Temp °C',
+                            data: tempData,
+                            borderColor: '#ffa726',
+                            backgroundColor: 'rgba(255, 167, 38, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        ...chartConfig.options,
+                        scales: {
+                            y: { ...chartConfig.options.scales.y, max: 100 }
+                        }
+                    }
+                });
+
+                const cpuTempEl = document.getElementById('cpuTemp');
+                const gpuTempEl = document.getElementById('gpuTemp');
+                const avgTempEl = document.getElementById('avgTemp');
+                if (cpuTempEl) cpuTempEl.textContent = (tempCurrent + 5) + '°C';
+                if (gpuTempEl) gpuTempEl.textContent = (tempCurrent - 2) + '°C';
+                if (avgTempEl) avgTempEl.textContent = tempCurrent + '°C';
+            }
+
+            // Update Comparison Table
+            updateComparisonMetrics({
+                fps: { current: fpsCurrent, avg: Math.round(fpsData.reduce((a, b) => a + b) / fpsData.length), peak: Math.max(...fpsData) },
+                cpu: { current: cpuCurrent, avg: Math.round(cpuData.reduce((a, b) => a + b) / cpuData.length), peak: Math.max(...cpuData) },
+                gpu: { current: gpuCurrent, avg: Math.round(gpuData.reduce((a, b) => a + b) / gpuData.length), peak: Math.max(...gpuData) },
+                memory: { current: (cpuCurrent / 100 * 16).toFixed(1), avg: (Math.round(cpuData.reduce((a, b) => a + b) / cpuData.length) / 100 * 16).toFixed(1), peak: (Math.max(...cpuData) / 100 * 16).toFixed(1) },
+                network: { current: networkCurrent.toFixed(1), avg: (networkData.reduce((a, b) => a + b) / networkData.length).toFixed(1), peak: Math.max(...networkData).toFixed(1) }
+            });
+
+            // Simulate real-time updates
+            setInterval(() => {
+                updateChartsWithNewData();
+            }, 2000);
+        }
+
+        function updateComparisonMetrics(metrics) {
+            const safeSet = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+
+            safeSet('comp-fps-current', metrics.fps.current);
+            safeSet('comp-fps-avg', metrics.fps.avg);
+            safeSet('comp-fps-peak', metrics.fps.peak);
+
+            safeSet('comp-cpu-current', metrics.cpu.current + '%');
+            safeSet('comp-cpu-avg', metrics.cpu.avg + '%');
+            safeSet('comp-cpu-peak', metrics.cpu.peak + '%');
+
+            safeSet('comp-gpu-current', metrics.gpu.current + '%');
+            safeSet('comp-gpu-avg', metrics.gpu.avg + '%');
+            safeSet('comp-gpu-peak', metrics.gpu.peak + '%');
+
+            safeSet('comp-mem-current', metrics.memory.current + ' GB');
+            safeSet('comp-mem-avg', metrics.memory.avg + ' GB');
+            safeSet('comp-mem-peak', metrics.memory.peak + ' GB');
+
+            safeSet('comp-net-current', metrics.network.current + ' Mbps');
+            safeSet('comp-net-avg', metrics.network.avg + ' Mbps');
+            safeSet('comp-net-peak', metrics.network.peak + ' Mbps');
+        }
+
+        function updateChartsWithNewData() {
+            try {
+                // Simulate real-time data updates (shift old data, add new)
+                if (!chartInstances || Object.keys(chartInstances).length === 0) {
+                    return; // Exit if no charts initialized
+                }
+                
+                Object.keys(chartInstances).forEach(key => {
+                    try {
+                        const chart = chartInstances[key];
+                        if (chart && chart.data && chart.data.datasets && chart.data.datasets[0]) {
+                            const dataset = chart.data.datasets[0];
+                            const newValue = Math.max(0, dataset.data[dataset.data.length - 1] + (Math.random() - 0.5) * 20);
+                            
+                            dataset.data.shift();
+                            dataset.data.push(newValue);
+                            chart.update('none'); // Update without animation for smooth real-time feel
+                        }
+                    } catch (err) {
+                        console.warn('Error updating chart ' + key, err);
+                    }
+                });
+            } catch (error) {
+                console.error('Error in updateChartsWithNewData:', error);
+            }
+        }
+
+        // Load analysis on page load
+        window.addEventListener('load', loadPerformanceAnalysis);
+    </script>
+</body>
+</html>

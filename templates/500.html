@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500: Something went wrong on our side</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+</head>
+<body style="min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px;">
+    <div class="tech-card animate-fade-in-up" style="max-width: 480px; padding: 40px;">
+        <div style="font-size: 44px; margin-bottom: 16px; color: var(--accent-2-text);"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+        <div class="badge badge-rose" style="margin-bottom: 12px;">Error 500</div>
+        <h1 class="font-display" style="font-size: 26px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Something went wrong on our side</h1>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">The server hit an error while handling your request. Try again in a moment.</p>
+        <a href="/home" class="btn btn-primary">Back to dashboard</a>
+    </div>
+</body>
+</html>

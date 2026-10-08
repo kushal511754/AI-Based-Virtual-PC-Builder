@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Build Result — Virtual PC Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}">
+    <style>
+        .result-hud-banner {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-tech);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-hud-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        .score-radar-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .score-box {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            text-align: center;
+        }
+
+        .score-box .score-val {
+            font-family: var(--font-mono);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 4px 0;
+        }
+
+        .score-box .score-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Component Cards Matrix */
+        .parts-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .part-breakdown-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: border-color .15s, background .15s;
+            position: relative;
+        }
+
+        .part-breakdown-card:hover {
+            border-color: var(--accent-line);
+            background: var(--bg-card-hover);
+        }
+
+        .part-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .part-title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        .part-spec-line {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-bottom: 12px;
+        }
+
+        .part-price-badge {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        @media (max-width: 900px) {
+            .score-radar-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Header -->
+    <header class="app-navbar">
+        <a href="/home" class="nav-brand-group">
+            <div class="brand-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+            <div class="brand-title">
+                <span>Virtual PC</span>
+                <span class="brand-sub">Builder</span>
+            </div>
+        </a>
+
+        <ul class="nav-links-wrap">
+            <li><a href="/home" class="nav-link-item">Dashboard</a></li>
+            <li><a href="/ai-domain-selection" class="nav-link-item active">AI Builder</a></li>
+            <li><a href="/manual-builder" class="nav-link-item">Manual builder</a></li>
+            <li><a href="/performance-analysis" class="nav-link-item">Performance</a></li>
+            <li><a href="/saved" class="nav-link-item">My builds</a></li>
+        </ul>
+
+        <div class="nav-actions-group">
+            <button onclick="saveCurrentBuild()" id="saveBtn" class="btn btn-primary btn-sm">
+                <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save build</span>
+            </button>
+            <a href="/summary" class="btn btn-ghost btn-sm">Export spec sheet</a>
+        </div>
+    </header>
+
+    <main class="layout-container animate-fade-in-up">
+        <!-- Top HUD Banner -->
+        <section class="result-hud-banner">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span class="badge badge-cyan" id="buildDomainBadge">Gaming spec</span>
+                        <span class="badge badge-cyan" id="compatibilityBadge">Compatibility pending</span>
+                    </div>
+                    <h1 class="font-display" style="font-size: 28px; font-weight: 700; color: var(--text-primary);">
+                        AI-Optimized Configuration
+                    </h1>
+                    <p id="buildSubtitle" style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">
+                        Balanced for Cyberpunk 2077 at 1440p Target Resolution.
+                    </p>
+                </div>
+
+                <div style="text-align: right;">
+                    <span style="font-size: 12px; color: var(--text-muted); ">Estimated parts cost</span>
+                    <div id="totalPriceDisplay" style="font-family: var(--font-mono); font-size: 36px; font-weight: 700; color: var(--accent); ">
+                        ₹1,24,500
+                    </div>
+                    <span id="budgetCheckStatus" style="font-size: 12px; color: var(--text-muted);">Catalogue estimate; confirm retailer prices</span>
+                </div>
+            </div>
+
+            <!-- Score Radars / Telemetry Indicators -->
+            <div class="score-radar-grid">
+                <div class="score-box">
+                    <span class="score-label">Compatibility</span>
+                    <div class="score-val" id="compatibilityScore" style="color: var(--ok-text);">—</div>
+                    <div class="progress-track"><div class="progress-fill progress-fill-green" id="compatibilityProgress" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="score-box">
+                    <span class="score-label">Performance</span>
+                    <div class="score-val" style="color: var(--accent);">—</div>
+                    <div class="progress-track"><div class="progress-fill progress-fill-cyan" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="score-box">
+                    <span class="score-label">Est. Power Draw</span>
+                    <div class="score-val" id="powerDrawVal" style="color: var(--accent);">Review</div>
+                    <div class="progress-track"><div class="progress-fill progress-fill-amber" style="width: 0%;"></div></div>
+                </div>
+
+                <div class="score-box">
+                    <span class="score-label">Value</span>
+                    <div class="score-val" style="color: var(--accent-2-text);">—</div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 0%; background: var(--accent-2);"></div></div>
+                </div>
+
+                <div class="score-box">
+                    <span class="score-label">Upgradeability</span>
+                    <div class="score-val" style="color: var(--accent-2-text);">—</div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 0%; background: var(--accent-2);"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Action Hub -->
+        <section style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+            <button onclick="addBuildToCart()" class="btn btn-primary" id="addBuildCartBtn">Add full build to cart</button>
+            <button onclick="toggleCart()" class="btn btn-secondary">View cart (<span id="cartCount">0</span>)</button>
+            <button onclick="transferToManualBuilder()" class="btn btn-primary ">
+                <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg> Tweak Manually in Configurator</span>
+            </button>
+            <a href="/ai-game-input" class="btn btn-secondary">
+                <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5M3 12a9 9 0 0 0 15.5 6.2L21 16M16 16h5v5"/></svg> Regenerate with New Specs</span>
+            </a>
+            <a href="/performance-analysis" class="btn btn-cyan-outline">
+                <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg> View Deep Benchmark & FPS</span>
+            </a>
+            <a href="/3d-builder" class="btn btn-ghost">
+                <span>3D Visualizer</span>
+            </a>
+        </section>
+
+        <!-- Parts Breakdown Grid -->
+        <section>
+            <div class="flex-between" style="margin-bottom: 14px;">
+                <div>
+                    <h2 class="font-display" style="font-size: 18px; font-weight: 700;">Parts breakdown</h2>
+                    <p style="color: var(--text-muted); font-size: 12px;">Parts chosen to work well together and give the best value for the price.</p>
+                </div>
+                <span class="badge badge-cyan" id="partsCountBadge">0 parts recommended</span>
+            </div>
+            <div id="partsMatrixContainer" class="parts-matrix-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+    </main>
+
+    <main class="layout-container">
+        <section id="compatibilityPanel" class="result-hud-banner" style="padding: 22px; margin-bottom: 24px;">
+            <h2 class="font-display" style="font-size: 18px; font-weight: 700;">Compatibility checks</h2>
+            <p id="compatibilitySummary" style="color: var(--text-muted); font-size: 13px; margin: 6px 0 14px;">Checking the recommended parts…</p>
+            <div id="compatibilityChecks" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;"></div>
+        </section>
+        <section id="cartPanel" class="result-hud-banner" style="display: none; padding: 22px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div>
+                    <h2 class="font-display" style="font-size: 18px; font-weight: 700;">Your parts cart</h2>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Choose a retailer for each item to complete checkout. Prices and stock can change.</p>
+                </div>
+                <button onclick="clearCart()" class="btn btn-ghost btn-sm">Clear cart</button>
+            </div>
+            <div id="cartItems" style="margin-top: 14px;"></div>
+            <div id="cartTotal" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent); margin-top: 14px;"></div>
+        </section>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // Display helper: sentence case for labels, upper case only for part acronyms
+        const cap = (s) => { s = String(s || '').replace(/_/g, ' '); return ['cpu','gpu','ram','psu','ssd','hdd'].includes(s.toLowerCase()) ? s.toUpperCase() : s.charAt(0).toUpperCase() + s.slice(1); };
+        let currentBuildData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAiBuild();
+            renderCart();
+        });
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function loadAiBuild() {
+            const cached = sessionStorage.getItem('currentAiBuild');
+            if (cached) {
+                try {
+                    currentBuildData = JSON.parse(cached);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (!currentBuildData || !currentBuildData.success || !currentBuildData.suggested_parts) {
+                const message = currentBuildData?.message || 'No recommendation is available yet. Enter your budget and try again.';
+                document.getElementById('buildSubtitle').innerText = message;
+                document.getElementById('buildDomainBadge').innerText = 'Build unavailable';
+                document.getElementById('partsMatrixContainer').innerText = message;
+                document.getElementById('totalPriceDisplay').innerText = '—';
+                document.getElementById('partsCountBadge').innerText = 'No parts recommended';
+                document.getElementById('addBuildCartBtn').disabled = true;
+                document.getElementById('compatibilitySummary').innerText = 'Compatibility cannot be assessed until a recommendation is generated.';
+                return;
+            }
+
+            renderBuildUI(currentBuildData);
+        }
+
+        function renderBuildUI(data) {
+            const parts = data.suggested_parts || {};
+            const domain = data.domain || 'Gaming';
+            const gameName = data.game_name || 'General';
+
+            document.getElementById('buildDomainBadge').innerText = cap(domain) + ' setup';
+            document.getElementById('buildSubtitle').innerText = `Recommended for ${gameName} and ${domain}. Catalogue prices are estimates; confirm exact part and price with the retailer.`;
+
+            let totalPrice = 0;
+            const categoryMeta = [
+                { key: 'cpu', label: 'Processor (CPU)', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>', reason: 'High single-core clock speeds for maximum 1% low FPS stability.' },
+                { key: 'gpu', label: 'Graphics Card (GPU)', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="10" rx="2"/><circle cx="9" cy="11" r="2.6"/><circle cx="16" cy="11" r="1.6"/><path d="M5 16v3M2 19h6"/></svg>', reason: 'VRAM buffer headroom & Ray Tracing/DLSS/FSR hardware acceleration.' },
+                { key: 'motherboard', label: 'Motherboard', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M11 9h4a2 2 0 0 0 2-2V3M7 21v-4a2 2 0 0 1 2-2h4"/></svg>', reason: 'Matching VRM power stages and PCIe Gen4/Gen5 lane bandwidth.' },
+                { key: 'ram', label: 'System Memory (RAM)', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="9" rx="1.5"/><path d="M6 16v3M10 16v3M14 16v3M18 16v3M6 11h2M11 11h2M16 11h2"/></svg>', reason: 'Optimal memory frequency & low CAS latency for silicon IMC.' },
+                { key: 'storage', label: 'Primary Storage', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></svg>', reason: 'Ultra-fast NVMe read/write speeds for instant asset streaming.' },
+                { key: 'psu', label: 'Power Supply (PSU)', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>', reason: '80+ efficiency rating with 35%+ headroom for transient power spikes.' },
+                { key: 'case', label: 'PC Chassis', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>', reason: 'High airflow mesh front panel & GPU clearance support.' },
+                { key: 'cooling', label: 'Thermal Cooling', icon: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-6 3-6s2 3-1 5M14 12c4 0 6 1 6 3s-3 2-5-1M12 14c0 4-1 6-3 6s-2-3 1-5M10 12c-4 0-6-1-6-3s3-2 5 1"/></svg>', reason: 'TDP dissipation rating designed to prevent thermal throttling.' }
+            ];
+
+            const container = document.getElementById('partsMatrixContainer');
+            container.innerHTML = categoryMeta.map(cat => {
+                const item = parts[cat.key];
+                if (!item) return '';
+                const price = item.price_inr !== undefined ? Number(item.price_inr) : (item.price ? Math.round(item.price * 83) : 0);
+                totalPrice += price;
+
+                let specText = '';
+                if (cat.key === 'cpu') specText = `${item.cores || 8}C / ${item.threads || 16}T, Socket ${item.socket_type || 'AM5'}`;
+                else if (cat.key === 'gpu') specText = `${item.vram_gb || 12}GB VRAM, TDP: ${item.power_draw || 200}W`;
+                else if (cat.key === 'motherboard') specText = `${item.chipset || 'Z790/B650'}, ${item.ram_type || 'DDR5'}, ${item.form_factor || 'ATX'}`;
+                else if (cat.key === 'ram') specText = `${item.speed_mhz || 6000}MHz, ${item.size_gb || 32}GB Dual Channel`;
+                else if (cat.key === 'storage') specText = `${item.capacity_gb ? item.capacity_gb + 'GB' : '2TB'}, ${item.speed_rpm_or_mbps || 7000}MB/s`;
+                else if (cat.key === 'psu') specText = `${item.wattage || 750}W, ${item.efficiency_rating || '80+ Gold'}`;
+                else if (cat.key === 'case') specText = `${item.form_factor || 'Mid Tower'}, Clearance: ${item.max_gpu_length_mm || 400}mm`;
+                else if (cat.key === 'cooling') specText = `${item.type || 'Air/Liquid'}, TDP: ${item.tdp_rating || 250}W`;
+
+                return `
+                    <div class="part-breakdown-card hover-glow">
+                        <div>
+                            <div class="part-top-row">
+                                <span class="badge badge-neutral">${cat.icon} ${cat.label}</span>
+                                <span style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">${item.price_source || item.manufacturer || 'Catalog part'}</span>
+                            </div>
+                            <div class="part-title">${item.name || 'Component'}</div>
+                            <div class="part-spec-line">${item.specs || specText || 'Specs from ' + (item.price_source || data.price_source || 'catalogue')}</div>
+                            <div style="background: var(--accent-dim); border-left: 2px solid var(--accent); padding: 6px 10px; border-radius: 0 var(--radius-xs) var(--radius-xs) 0; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+                                <strong style="color: var(--accent);">AI Rationale:</strong> ${cat.reason}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 10px; margin-top: 6px;">
+                            <span class="part-price-badge">₹${price.toLocaleString('en-IN')}</span>
+                            <button onclick="addPartToCart('${cat.key}')" class="btn btn-secondary btn-sm" style="font-size: 12px;">Add to cart</button>
+                            <a href="https://www.amazon.in/s?k=${encodeURIComponent(item.name || '')}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" style="font-size: 12px;">Buy online</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('totalPriceDisplay').innerText = `₹${totalPrice.toLocaleString('en-IN')}`;
+            localStorage.setItem('activeBuildParts', JSON.stringify(parts));
+            localStorage.setItem('activeBuildPrice', totalPrice);
+            document.getElementById('totalPriceDisplay').innerText = `₹${totalPrice.toLocaleString('en-IN')}`;
+            const budget = Number(data.budget || 0);
+            const budgetStatus = document.getElementById('budgetCheckStatus');
+            const estimatedTotal = Number(data.total_price || totalPrice);
+            budgetStatus.innerText = budget ? (estimatedTotal <= budget ? 'Estimated total is within budget' : 'Estimated total exceeds budget') : 'Catalogue estimate; confirm retailer prices';
+            budgetStatus.style.color = budget && estimatedTotal > budget ? 'var(--bad-text)' : 'var(--text-muted)';
+            document.getElementById('partsCountBadge').innerText = `${Object.values(parts).filter(Boolean).length} parts recommended`;
+            renderCompatibility(data.compatibility || {});
+            renderCart();
+        }
+
+        async function saveCurrentBuild() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Saving...</span>';
+
+            try {
+                const parts = currentBuildData?.suggested_parts || {};
+                const payload = {
+                    build_name: `${currentBuildData?.domain || 'Gaming'} AI Rig`,
+                    domain: currentBuildData?.domain || 'Gaming',
+                    game_name: currentBuildData?.game_name || 'Cyberpunk 2077',
+                    total_price: parseInt(document.getElementById('totalPriceDisplay').innerText.replace(/[^\d]/g, ''), 10) || 0,
+                    suggested_parts: parts
+                };
+
+                const res = await fetch('/api/builder/save-build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast('Build saved to your library');
+                    btn.innerHTML = '<span>Saved</span>';
+                } else {
+                    showToast(data.message || 'Build saved on this device');
+                    btn.innerHTML = '<span>Saved</span>';
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Build saved in this browser');
+                btn.innerHTML = '<span>Saved</span>';
+            }
+        }
+
+        function transferToManualBuilder() {
+            window.location.href = '/manual-builder?transfer=ai';
+        }
+
+        function renderCompatibility(compatibility) {
+            const checks = compatibility.checks || [];
+            const labels = { pass: 'Pass', fail: 'Not compatible', review: 'Needs checking' };
+            const colors = { pass: 'var(--ok-text)', fail: 'var(--bad-text)', review: 'var(--warn-text)' };
+            const passCount = checks.filter(check => check.status === 'pass').length;
+            const reviewCount = checks.filter(check => check.status === 'review').length;
+            const failCount = checks.filter(check => check.status === 'fail').length;
+            const status = compatibility.status || (compatibility.compatible === true ? 'compatible' : compatibility.compatible === false ? 'incompatible' : 'review');
+            const statusText = status === 'compatible' ? 'Compatible' : status === 'incompatible' ? 'Compatibility issue found' : 'Review before purchase';
+            document.getElementById('compatibilityBadge').innerText = statusText;
+            document.getElementById('compatibilitySummary').innerText = checks.length
+                ? `${passCount} checks passed, ${reviewCount} need verification, ${failCount} incompatibilities found. Check exact part revisions before ordering.`
+                : [...(compatibility.errors || []), ...(compatibility.warnings || [])].join(' ') || 'The catalogue did not provide enough detail to verify every part.';
+            document.getElementById('compatibilityScore').innerText = checks.length ? `${passCount}/${checks.length}` : 'Review';
+            document.getElementById('compatibilityProgress').style.width = checks.length ? `${Math.round(passCount / checks.length * 100)}%` : '0%';
+            document.getElementById('compatibilityProgress').style.background = failCount ? 'var(--bad)' : reviewCount ? 'var(--warn)' : '';
+            const displayChecks = checks.length ? checks : [
+                ...(compatibility.errors || []).map(detail => ({ name: 'Compatibility issue', status: 'fail', detail })),
+                ...(compatibility.warnings || []).map(detail => ({ name: 'Check before ordering', status: 'review', detail }))
+            ];
+            document.getElementById('compatibilityChecks').innerHTML = displayChecks.map(check => `
+                <div style="background: var(--bg-inset); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+                    <strong style="color: ${colors[check.status] || 'var(--text-primary)'};">${labels[check.status] || 'Review'} · ${check.name}</strong>
+                    <div style="color: var(--text-secondary); font-size: 12px; margin-top: 5px;">${check.detail}</div>
+                </div>`).join('');
+        }
+
+        const CART_KEY = 'virtualPcPartsCart';
+        function getCart() {
+            try { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
+            catch (_) { return []; }
+        }
+        function addPartToCart(category) {
+            const part = currentBuildData?.suggested_parts?.[category];
+            if (!part) return;
+            const cart = getCart().filter(item => item.category !== category);
+            cart.push({ category, name: part.name, price: Number(part.price_inr ?? (part.price ? part.price * 83 : 0)), currency: 'INR' });
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+            renderCart();
+            showToast(`${part.name} added to cart`);
+        }
+        function addBuildToCart() {
+            const parts = currentBuildData?.suggested_parts || {};
+            const categories = Object.keys(parts).filter(category => parts[category]);
+            const existing = getCart().filter(item => !categories.includes(item.category));
+            categories.forEach(category => {
+                const part = parts[category];
+                existing.push({ category, name: part.name, price: Number(part.price_inr ?? (part.price ? part.price * 83 : 0)), currency: 'INR' });
+            });
+            localStorage.setItem(CART_KEY, JSON.stringify(existing));
+            renderCart();
+            showToast(`${categories.length} recommended parts added to cart`);
+            toggleCart(true);
+        }
+        function renderCart() {
+            const cart = getCart();
+            const countEl = document.getElementById('cartCount');
+            const itemsEl = document.getElementById('cartItems');
+            if (countEl) countEl.innerText = cart.length;
+            if (!itemsEl) return;
+            itemsEl.innerHTML = cart.length ? cart.map((item, index) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-subtle); flex-wrap:wrap;">
+                    <div><strong>${item.name}</strong><div style="color:var(--text-muted); font-size:12px;">${cap(item.category)}</div></div>
+                    <div style="display:flex; align-items:center; gap:10px;"><span>₹${Number(item.price).toLocaleString('en-IN')}</span>
+                    <a href="https://www.amazon.in/s?k=${encodeURIComponent(item.name)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">Find retailer</a>
+                    <button onclick="removeCartItem(${index})" class="btn btn-ghost btn-sm">Remove</button></div>
+                </div>`).join('') : '<p style="color:var(--text-muted);">Your cart is empty. Add recommended parts to collect your shopping list.</p>';
+            const total = cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+            document.getElementById('cartTotal').innerText = `Parts subtotal: ₹${total.toLocaleString('en-IN')}`;
+        }
+        function removeCartItem(index) {
+            const cart = getCart();
+            cart.splice(index, 1);
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+            renderCart();
+        }
+        function clearCart() {
+            localStorage.removeItem(CART_KEY);
+            renderCart();
+        }
+        function toggleCart(open) {
+            const panel = document.getElementById('cartPanel');
+            panel.style.display = open === true || panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

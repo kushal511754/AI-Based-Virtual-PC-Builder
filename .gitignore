@@ -1,0 +1,31 @@
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# User data and local databases
+*.db
+*.sqlite
+*.sqlite3
+instance/
+uploads/
+
+# Large or extracted game datasets (games_cache.json is intentionally retained)
+games.csv
+archive_extracted/
+
+# Runtime output and packaged local copies
+*.log
+*.log.*
+*.zip
+build/
+dist/
+node_modules/
